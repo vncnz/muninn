@@ -1,6 +1,6 @@
-# Tauri + React + Typescript
+# Muninn - ᛗᚢᚾᛁᚾᚾ
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+A Linux desktop companion that remembers what you listen to, with synced lyrics and MPRIS integration.
 
 ## Recommended IDE Setup
 
