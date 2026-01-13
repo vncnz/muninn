@@ -1,18 +1,29 @@
 import { useState, useEffect, useReducer } from "react";
-import reactLogo from "./assets/react.svg";
+// import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
+import Pie from "./Pie/Pie";
 
 type songInfo = {
+  key: string,
   title: String,
   artist: String,
   album: String,
-  length: number,
+  len_secs: number
+}
+
+type songPlaying = {
+  metadata: songInfo,
   position: number
 }
 
-function songDataReducer (_state: songInfo, evt: String): any {
+type songStat = {
+  metadata: songInfo,
+  time: number
+}
+
+/* function songDataReducer (_state: songInfo, evt: String): any {
   let [title, artist, album, length, position] = evt.split('|')
   return {
     title,
@@ -21,26 +32,50 @@ function songDataReducer (_state: songInfo, evt: String): any {
     length: parseInt(length) / 1000.0 / 1000.0,
     position: parseInt(position) / 1000.0 / 1000.0
   }
-}
+} */
+/* function songBuilder (evt: String): songInfo {
+  let [title, artist, album, length, position] = evt.split('|')
+  return {
+    key: stripDuration(evt),
+    title,
+    artist,
+    album,
+    length: parseInt(length) / 1000.0 / 1000.0,
+    position: parseInt(position) / 1000.0 / 1000.0
+  }
+} */
+
+/* let stripDuration = (evt: String):String => {
+  const arr = evt.split('|')
+  if (arr.length === 5)
+    return arr.slice(0, 4).join('|')
+  return ''
+} */
+type counterDict = Record<string, number>;
+/* function statsReducer (_state: counterDict, evt: songStat[]): any {
+  let map: counterDict = {}
+  evt.forEach((el: songStat) => {
+    map[el.metadata.key] = el.time
+  })
+} */
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  // const [name, setName] = useState("");
-  const [song, songDispatch] = useReducer(songDataReducer, { title: '', artist: '', album: '', length: 0, position: 0 } as songInfo)
+  const [stats, setStats] = useState({});
+  const [song, setSong] = useState({ metadata: { key: '', title: '', artist: '', album: '', len_secs: 0 }, position: 0 } as songPlaying);
+  // const [song, songDispatch] = useReducer(songDataReducer, { title: '', artist: '', album: '', length: 0, position: 0 } as songInfo)
 
   useEffect(() => {
     // Subscribe once
-    const unlisten = listen<string>("mpris-event", (event) => {
-      let evt: any = event.payload
-      // console.log("Ratatoskr:", evt)
-      /*setEvents((events: any) => {
-        return [ ...events, evt].slice(0, 100)
-      })
-      // dataDispatch(evt)
-      allTimeEventsCounterDispatch(evt)
-      lastEventMapDispatch(evt)*/
+    const unlisten = listen<string>("mpris-event", (event: any) => {
+      console.log('evt', event)
+      let evt = event.payload as songPlaying
       console.log('mpris', evt)
-      songDispatch(evt)
+      // let s = songBuilder(evt)
+      // let songkey = stripDuration(evt)
+      if (evt.metadata.key != song.metadata.key) {
+        downloadLyrics(evt.metadata)
+      }
+      setSong(evt)
     });
 
     console.log("Suscribed")
@@ -49,12 +84,19 @@ function App() {
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, []); // empty dependency array -> run once */
+  }, []); // empty dependency array -> run once
 
-  /* async function greet() {
+  const downloadLyrics = (song: songInfo) => {
+    // TODO: download lyrics
+    console.log(song)
+  }
+
+  async function get_stats() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  } */
+    let s = await invoke("get_stats", {}) as any
+    setStats(s)
+    console.log(s)
+  }
   function timeToHuman (time: number) {
     let m = Math.floor(time / 60)
     let mins = m > 9 ? m : ('0' + m)
@@ -66,16 +108,27 @@ function App() {
     return Math.round(v * 100) + '%'
   }
 
-  let songEl = <div>
-    <div>Title: {song.title}</div>
-    <div>Artist: {song.artist}</div>
-    <div>Album: {song.album}</div>
-    <div>Time: {timeToHuman(song.position)} / {timeToHuman(song.length)} ({toPercent(song.position/song.length)})</div>
-  </div>
+  let statsPie: counterDict = {}
+  Object.values(stats).forEach(el => {
+    let e = el as songStat
+    statsPie[e.metadata.key] = e.time
+  })
+
+  let songEl = song.metadata.title ? 
+    <div>
+      <div>Title: {song.metadata.title}</div>
+      <div>Artist: {song.metadata.artist}</div>
+      <div>Album: {song.metadata.album}</div>
+      { song.metadata.len_secs > 0 && <div>Time: {timeToHuman(song.position)} / {timeToHuman(song.metadata.len_secs)} ({toPercent(song.position/song.metadata.len_secs)})</div> }
+    </div>
+    :
+    <div>No playing</div>
 
   return (
     <main className="container">
-      <p>{songEl}</p>
+      <div>{songEl}</div>
+      <button onClick={() => { get_stats() }}>Get stats</button>
+      <Pie data={statsPie} />
     </main>
   );
 }

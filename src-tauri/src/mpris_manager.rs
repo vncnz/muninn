@@ -3,20 +3,75 @@ use std::thread;
 use std::time::Duration;
 use tauri::AppHandle;
 use tauri::Emitter;
+use serde::{Serialize};
+use std::collections::HashMap;
+
+use crate::SharedStats;
+
+#[derive(Serialize, Clone)]
+struct SongInfo {
+  key: String,
+  title: String,
+  artist: String,
+  album: String,
+  len_secs: f64
+}
+
+impl SongInfo {
+    fn new (evt: String) -> Option<SongInfo> {
+        // let parts = evt.split("|").collect::<Vec<&str>>();
+        let values: Vec<String> = evt
+            .split('|')
+            .map(|s| s.to_string())
+            .collect();
+
+        // println!("{:?}", &values);
+
+        if values.len() == 4 {
+            let [title, artist, album, length] =
+                values.try_into().expect("exactly 4 fields expected");
+            let length = if let Ok(l) = length.parse::<i64>() { l } else { i64::MAX };
+            let len_secs = (length as f64) / 1000.0 / 1000.0;
+
+            return Some(SongInfo {
+                key: evt,
+                title,
+                artist,
+                album,
+                len_secs
+            })
+        }
+        None
+    }
+}
+
+#[derive(Serialize, Clone)]
+struct SongPlaying {
+    metadata: SongInfo,
+    position: f64
+}
+
+#[derive(Serialize, Clone)]
+pub struct SongStats {
+    metadata: SongInfo,
+    time: f64
+}
 
 pub struct MprisManager {
-    // TODO
+    // pub stats: HashMap<String, SongStats>
 }
 
 impl MprisManager {
     pub fn new () -> MprisManager {
-        MprisManager {}
+        MprisManager {
+            // stats: HashMap::new()
+        }
     }
 
-    pub fn start_listening (&self, app: AppHandle) {
+    pub fn start_listening (&mut self, shared_stats: SharedStats, app: AppHandle) {
         // let _ = app.emit("mpris-event", msg);
 
-        let mut last_active_player: String = String::new();
+        // let mut last_active_player: String = String::new();
 
         loop {
             thread::sleep(Duration::from_millis(900));
@@ -71,9 +126,22 @@ impl MprisManager {
 
             // Getting the metadata string
             let track_key = pc_allmeta(&active_player); // format!("{}|{}|{}|{}", title, artist, album, duration_raw);
-            let position = pc_position(&active_player);
+            let position = parse_position(pc_position(&active_player));
 
-            let _ = app.emit("mpris-event", format!("{track_key}|{position}"));
+            if let Some(song) = SongInfo::new(track_key.clone()) {
+                // stats
+                let mut stats = shared_stats.write().expect("Stats store poisoned");
+                let new_key = !stats.contains_key(&track_key);
+                let dict = &mut stats;
+                if new_key {
+                    dict.insert(track_key.clone(), SongStats { metadata: song.clone(), time: 0.0 });
+                }
+                dict.get_mut(&track_key).unwrap().time += 1.0;
+
+                let _ = app.emit("mpris-event", SongPlaying { metadata: song, position });
+            }
+
+            // let _ = app.emit("mpris-event", format!("{track_key}|{position}"));
             /*let changed = force_update || track_key != last_track_key;
             if !changed {
                 continue;
@@ -121,6 +189,12 @@ impl MprisManager {
         }
         // });
     }
+}
+
+fn parse_position(pos: String) -> f64 {
+    let p: f64 = pos.parse().unwrap();
+    let new_pos_secs = p / 1000.0 / 1000.0;
+    new_pos_secs
 }
 
 pub fn pc_position(player: &str) -> String {
