@@ -97,6 +97,11 @@ function App() {
     setStats(s)
     console.log(s)
   }
+  async function get_stats_all() {
+    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+    let s = await invoke("get_stats_all", {}) as any
+    console.log('get_stats_all', s)
+  }
   function timeToHuman (time: number) {
     let m = Math.floor(time / 60)
     let mins = m > 9 ? m : ('0' + m)
@@ -128,6 +133,7 @@ function App() {
     <main className="container">
       <div>{songEl}</div>
       <button onClick={() => { get_stats() }}>Get stats</button>
+      <button onClick={() => { get_stats_all() }}>Get stats all</button>
       <Pie data={statsPie} />
     </main>
   );

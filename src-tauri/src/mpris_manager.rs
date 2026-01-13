@@ -4,17 +4,17 @@ use std::time::Duration;
 use tauri::AppHandle;
 use tauri::Emitter;
 use serde::{Serialize};
-use std::collections::HashMap;
 
 use crate::SharedStats;
+use crate::SharedStore;
 
-#[derive(Serialize, Clone)]
-struct SongInfo {
-  key: String,
-  title: String,
-  artist: String,
-  album: String,
-  len_secs: f64
+#[derive(Serialize, Clone, Default)]
+pub struct SongInfo {
+  pub key: String,
+  pub title: String,
+  pub artist: String,
+  pub album: String,
+  pub len_secs: f64
 }
 
 impl SongInfo {
@@ -51,10 +51,10 @@ struct SongPlaying {
     position: f64
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Default)]
 pub struct SongStats {
-    metadata: SongInfo,
-    time: f64
+    pub(crate) metadata: SongInfo,
+    pub(crate) time: f64
 }
 
 pub struct MprisManager {
@@ -68,10 +68,12 @@ impl MprisManager {
         }
     }
 
-    pub fn start_listening (&mut self, shared_stats: SharedStats, app: AppHandle) {
+    pub fn start_listening (&mut self, shared_stats: SharedStats, shared_store: SharedStore, app: AppHandle) {
         // let _ = app.emit("mpris-event", msg);
 
         // let mut last_active_player: String = String::new();
+
+        let mut current: SongStats = SongStats::default();
 
         loop {
             thread::sleep(Duration::from_millis(900));
@@ -128,15 +130,30 @@ impl MprisManager {
             let track_key = pc_allmeta(&active_player); // format!("{}|{}|{}|{}", title, artist, album, duration_raw);
             let position = parse_position(pc_position(&active_player));
 
+            let mut is_new = false;
+
+            if track_key != current.metadata.key {
+                if current.metadata.key != "" && current.metadata.len_secs > 0.0 {
+                    let store = shared_store.lock().expect("StatsStore poisoned");
+                    if let Ok(_) = store.flush_track(&current) {}
+                }
+                is_new = true;
+            }
+
             if let Some(song) = SongInfo::new(track_key.clone()) {
                 // stats
                 let mut stats = shared_stats.write().expect("Stats store poisoned");
+
+                if is_new {
+                    current = SongStats { metadata: song.clone(), time: 0.0 };
+                }
+
                 let new_key = !stats.contains_key(&track_key);
                 let dict = &mut stats;
                 if new_key {
-                    dict.insert(track_key.clone(), SongStats { metadata: song.clone(), time: 0.0 });
+                    dict.insert(track_key.clone(), current.clone());
                 }
-                dict.get_mut(&track_key).unwrap().time += 1.0;
+                current.time += 1.0;
 
                 let _ = app.emit("mpris-event", SongPlaying { metadata: song, position });
             }
