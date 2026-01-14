@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 import Pie from "./Pie/Pie";
 import { songInfo, songPlaying, songStat } from "./types";
+import VisualTable from "./VisualTable/VisualTable";
 
 /* function songDataReducer (_state: songInfo, evt: String): any {
   let [title, artist, album, length, position] = evt.split('|')
@@ -73,13 +74,6 @@ function App() {
     // TODO: download lyrics
     console.log(song)
   }
-
-  async function get_stats() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    let s = await invoke("get_stats", {}) as any
-    // setStats(s)
-    console.log(s)
-  }
   async function get_stats_all() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     let s = await invoke("get_stats_all", {}) as songStat[]
@@ -103,11 +97,6 @@ function App() {
     let e = el as songStat
     statsPie[e.metadata.key] = e.time
   }) */
-  let statsList = stats.map((el, idx) => {
-    let e = el as songStat
-    // statsPie[e.metadata.key] = e.time
-    return <tr key={idx}><td>{e.time}s</td><td>{e.metadata.title}</td><td>{e.metadata.artist}</td><td>{e.metadata.album}</td></tr>
-  })
 
   let songEl = song.metadata.title ? 
     <div>
@@ -124,10 +113,8 @@ function App() {
       <div>{songEl}</div>
       {/*<button onClick={() => { get_stats() }}>Get stats</button>*/}
       <button onClick={() => { get_stats_all() }}>Get stats all</button>
-      <Pie data={stats} />
-      <table>
-        <tbody>{statsList}</tbody>
-      </table>
+      {/*<Pie data={stats} />*/}
+      <VisualTable data={stats} />
     </main>
   );
 }

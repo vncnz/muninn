@@ -1,0 +1,15 @@
+
+.visualTable {
+    .stack {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 2rem;
+
+        div {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+}
