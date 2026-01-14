@@ -4,24 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 import Pie from "./Pie/Pie";
-
-type songInfo = {
-  key: string,
-  title: String,
-  artist: String,
-  album: String,
-  len_secs: number
-}
-
-type songPlaying = {
-  metadata: songInfo,
-  position: number
-}
-
-type songStat = {
-  metadata: songInfo,
-  time: number
-}
+import { songInfo, songPlaying, songStat } from "./types";
 
 /* function songDataReducer (_state: songInfo, evt: String): any {
   let [title, artist, album, length, position] = evt.split('|')
@@ -60,7 +43,7 @@ type counterDict = Record<string, number>;
 } */
 
 function App() {
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState([] as songStat[]);
   const [song, setSong] = useState({ metadata: { key: '', title: '', artist: '', album: '', len_secs: 0 }, position: 0 } as songPlaying);
   // const [song, songDispatch] = useReducer(songDataReducer, { title: '', artist: '', album: '', length: 0, position: 0 } as songInfo)
 
@@ -94,13 +77,15 @@ function App() {
   async function get_stats() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     let s = await invoke("get_stats", {}) as any
-    setStats(s)
+    // setStats(s)
     console.log(s)
   }
   async function get_stats_all() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    let s = await invoke("get_stats_all", {}) as any
-    console.log('get_stats_all', s)
+    let s = await invoke("get_stats_all", {}) as songStat[]
+    s.sort((a,b) => b.time - a.time)
+    setStats(s)
+    // console.log('get_stats_all', s)
   }
   function timeToHuman (time: number) {
     let m = Math.floor(time / 60)
@@ -113,10 +98,15 @@ function App() {
     return Math.round(v * 100) + '%'
   }
 
-  let statsPie: counterDict = {}
+  /* let statsPie: counterDict = {}
   Object.values(stats).forEach(el => {
     let e = el as songStat
     statsPie[e.metadata.key] = e.time
+  }) */
+  let statsList = Object.values(stats).map(el => {
+    let e = el as songStat
+    // statsPie[e.metadata.key] = e.time
+    return <tr><td>{e.time}s</td><td>{e.metadata.title}</td><td>{e.metadata.artist}</td><td>{e.metadata.album}</td></tr>
   })
 
   let songEl = song.metadata.title ? 
@@ -132,9 +122,10 @@ function App() {
   return (
     <main className="container">
       <div>{songEl}</div>
-      <button onClick={() => { get_stats() }}>Get stats</button>
+      {/*<button onClick={() => { get_stats() }}>Get stats</button>*/}
       <button onClick={() => { get_stats_all() }}>Get stats all</button>
-      <Pie data={statsPie} />
+      <Pie data={stats} />
+      <table><tbody>{statsList}</tbody></table>
     </main>
   );
 }
