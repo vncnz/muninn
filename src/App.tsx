@@ -103,10 +103,10 @@ function App() {
     let e = el as songStat
     statsPie[e.metadata.key] = e.time
   }) */
-  let statsList = Object.values(stats).map(el => {
+  let statsList = stats.map((el, idx) => {
     let e = el as songStat
     // statsPie[e.metadata.key] = e.time
-    return <tr><td>{e.time}s</td><td>{e.metadata.title}</td><td>{e.metadata.artist}</td><td>{e.metadata.album}</td></tr>
+    return <tr key={idx}><td>{e.time}s</td><td>{e.metadata.title}</td><td>{e.metadata.artist}</td><td>{e.metadata.album}</td></tr>
   })
 
   let songEl = song.metadata.title ? 
@@ -125,7 +125,9 @@ function App() {
       {/*<button onClick={() => { get_stats() }}>Get stats</button>*/}
       <button onClick={() => { get_stats_all() }}>Get stats all</button>
       <Pie data={stats} />
-      <table><tbody>{statsList}</tbody></table>
+      <table>
+        <tbody>{statsList}</tbody>
+      </table>
     </main>
   );
 }
