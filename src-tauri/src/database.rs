@@ -31,7 +31,7 @@ impl StatsStore {
 
     pub fn flush_track(&self, track: &SongStats) -> rusqlite::Result<()> {
         self.conn.execute(
-            "INSERT INTO song (id, title, artist, album, len, time) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO song (id, title, artist, album, len, time) VALUES (?1, ?2, ?3, ?4, ?5, ?6) on conflict (id) do update set time = time + excluded.time",
             (&track.metadata.key, &track.metadata.title, &track.metadata.artist, &track.metadata.album, &track.metadata.len_secs, &track.time),
         )?;
         Ok(())
