@@ -88,7 +88,7 @@ function App() {
     }
     // s.sort((a,b) => b.time - a.time)
     setStats(s)
-    // console.log('get_stats_all', s)
+    console.log('get_stats', s)
   }
   function timeToHuman (time: number) {
     let m = Math.floor(time / 60)
@@ -163,8 +163,9 @@ function App() {
     columns = [
           {
             key: "time",
-            label: "Total time (secs)",
-            align: "right"
+            label: "Total\xa0time",
+            // align: "right"
+            format: timeConversion
           },
           { key: "artist", label: "Artist" }
         ]
