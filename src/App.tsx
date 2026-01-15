@@ -3,9 +3,8 @@ import { useState, useEffect, useReducer } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
-import Pie from "./Pie/Pie";
-import { songInfo, songPlaying, songStat } from "./types";
-import VisualTable from "./VisualTable/VisualTable";
+import { songInfo, songPlaying, songStat, songStatTable } from "./types";
+import { VisualTable } from "./VisualTable/VisualTable";
 
 /* function songDataReducer (_state: songInfo, evt: String): any {
   let [title, artist, album, length, position] = evt.split('|')
@@ -48,6 +47,9 @@ function App() {
   const [song, setSong] = useState({ metadata: { key: '', title: '', artist: '', album: '', len_secs: 0 }, position: 0 } as songPlaying);
   // const [song, songDispatch] = useReducer(songDataReducer, { title: '', artist: '', album: '', length: 0, position: 0 } as songInfo)
 
+  const [groupType, setGroupType] = useState('song')
+
+  
   useEffect(() => {
     // Subscribe once
     const unlisten = listen<string>("mpris-event", (event: any) => {
@@ -74,10 +76,17 @@ function App() {
     // TODO: download lyrics
     console.log(song)
   }
-  async function get_stats_all() {
+  async function get_stats(type: string, params: any) {
+    params = params || {}
+    setGroupType(type)
+    let s: songStat[] = []
+    if (type === 'artist') {
+      s = await invoke("get_top_artists", {}) as songStat[]
+    } else if (type === 'song') {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    let s = await invoke("get_stats_all", {}) as songStat[]
-    s.sort((a,b) => b.time - a.time)
+      s = await invoke("get_stats_all", {}) as songStat[]
+    }
+    // s.sort((a,b) => b.time - a.time)
     setStats(s)
     // console.log('get_stats_all', s)
   }
@@ -107,14 +116,58 @@ function App() {
     </div>
     :
     <div>No playing</div>
+  
+  let stats2 = stats.map((song: songStat) => {
+    return {
+      title: song.metadata.title,
+      artist: song.metadata.artist,
+      album: song.metadata.album,
+      len_secs: song.metadata.len_secs,
+      time: song.time
+    } as songStatTable
+  })
+
+  let columns: any[] = []
+  if (groupType === 'song') 
+    columns = [
+          {
+            key: "time",
+            label: "Time (secs)",
+            align: "right"
+          },
+          { key: "title", label: "Title" },
+          { key: "artist", label: "Artist" },
+          { key: "album", label: "Album" },
+          { key: "len_secs", label: "Duration (s)" }
+        ]
+  else if (groupType === 'artist') 
+    columns = [
+          {
+            key: "time",
+            label: "Total time (secs)",
+            align: "right"
+          },
+          { key: "artist", label: "Artist" }
+        ]
+    
 
   return (
     <main className="container">
+      <h1>Current song</h1>
       <div>{songEl}</div>
       {/*<button onClick={() => { get_stats() }}>Get stats</button>*/}
-      <button onClick={() => { get_stats_all() }}>Get stats all</button>
+
+      <h1>Statistics</h1>
+      <div className="buttons">
+        <button onClick={() => { get_stats('song', {}) }}>Get stats songs</button>
+        <button onClick={() => { get_stats('artist', {}) }}>Get stats artists</button>
+      </div>
       {/*<Pie data={stats} />*/}
-      <VisualTable data={stats} />
+      <VisualTable<songStatTable>
+        visualkey="time"
+        columns={columns}
+        rows={stats2}
+      />
     </main>
   );
 }

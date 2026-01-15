@@ -1,15 +1,59 @@
 
 .visualTable {
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        // border-spacing: 10px 5px;
+
+        th, td {
+            padding: 5px 10px;
+            // text-wrap: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        thead tr th:nth-child(1) {
+            width: 1%;
+            // display: grid;
+            // grid-template-columns: auto 1fr 1fr 1fr;
+        }
+
+        tr {
+            &.rowHovered {
+                // background-color: coral;
+                background-image: linear-gradient(to top, transparent, rebeccapurple 50%, transparent);
+            }
+        }
+    }
+
     .stack {
         display: flex;
         flex-direction: row;
         width: 100%;
         height: 2rem;
+        // overflow: hidden;
 
         div {
             display: flex;
             flex-direction: row;
             align-items: center;
+
+            $border-radius: 8px;
+            &:nth-child(1) {
+                border-top-left-radius: $border-radius;
+                border-bottom-left-radius: $border-radius;
+            }
+            &:nth-last-child(1) {
+                border-top-right-radius: $border-radius;
+                border-bottom-right-radius: $border-radius;
+            }
+
+            &.rectHovered {
+                transform: scale(1, 1.3);
+                // outline-offset: -3px;
+                // outline: 2px solid var(--background-color);
+                // border-radius: $border-radius;
+            }
         }
     }
 }

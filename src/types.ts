@@ -15,3 +15,11 @@ export type songStat = {
   metadata: songInfo,
   time: number
 }
+
+export type songStatTable = {
+  title: String,
+  artist: String,
+  album: String,
+  len_secs: number,
+  time: number
+}

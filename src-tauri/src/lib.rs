@@ -25,6 +25,12 @@ fn get_stats_all(store: tauri::State<'_, SharedStore>) -> Result<Vec<SongStats>,
     Ok(store.get_all())
 }
 
+#[tauri::command]
+fn get_top_artists(store: tauri::State<'_, SharedStore>) -> Result<Vec<SongStats>, String> {
+    let store = store.lock().expect("StatsStore poisoned");
+    Ok(store.get_top_artists())
+}
+
 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -51,7 +57,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         // .invoke_handler(tauri::generate_handler![get_stats_all])
-        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all])
+        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

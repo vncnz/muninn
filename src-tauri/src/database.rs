@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use rusqlite::{Connection,Result};
+use rusqlite::{Connection};
 
 use crate::mpris_manager::{SongInfo, SongStats};
 
@@ -10,10 +10,11 @@ pub struct StatsStore {
 
 impl StatsStore {
     pub fn new(app_dir: &Path) -> rusqlite::Result<Self> {
-        let conn = Connection::open_in_memory()?;
+        // let conn = Connection::open_in_memory()?;
+        let conn = Connection::open(app_dir)?;
 
         conn.execute(
-            "CREATE TABLE song (
+            "CREATE TABLE IF NOT EXISTS song (
                 id      TEXT PRIMARY KEY,
                 title   TEXT NOT NULL,
                 artist  TEXT,
@@ -39,7 +40,7 @@ impl StatsStore {
 
     pub fn get_all(&self) -> Vec<SongStats> {
         let mut results = Vec::new();
-        let mut stmt = self.conn.prepare("SELECT id, title, artist, album, len, time FROM song").expect("prepare ko");
+        let mut stmt = self.conn.prepare("SELECT id, title, artist, album, len, time FROM song order by time desc").expect("prepare ko");
         let songs = stmt.query_map([], |row| {
             Ok(SongStats {
                 metadata: SongInfo {
@@ -50,6 +51,32 @@ impl StatsStore {
                     len_secs: row.get(4).expect("len in query")
                 },
                 time: row.get(5).expect("time in query")
+            })
+        });
+
+        if let Ok(songs) = songs {
+            for song in songs {
+                if let Ok(s) = song {
+                    results.push(s);
+                }
+            }
+        }
+        results
+    }
+
+    pub fn get_top_artists(&self) -> Vec<SongStats> {
+        let mut results = Vec::new();
+        let mut stmt = self.conn.prepare("SELECT artist, SUM(time) FROM song group by artist order by SUM(time) desc").expect("prepare ko");
+        let songs = stmt.query_map([], |row| {
+            Ok(SongStats {
+                metadata: SongInfo {
+                    key: row.get(0).expect("Artist in query"),
+                    title: "".to_string(),
+                    artist: row.get(0).expect("Artist in query"),
+                    album: "".to_string(),
+                    len_secs: 0.0
+                },
+                time: row.get(1).expect("sum_time in query")
             })
         });
 
