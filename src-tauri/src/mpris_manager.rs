@@ -34,7 +34,7 @@ impl SongInfo {
             let len_secs = (length as f64) / 1000.0 / 1000.0;
 
             return Some(SongInfo {
-                key: evt,
+                key: format!("{}|{}|{}", title, artist, album),
                 title,
                 artist,
                 album,
@@ -68,7 +68,7 @@ impl MprisManager {
         }
     }
 
-    pub fn start_listening (&mut self, shared_stats: SharedStats, shared_store: SharedStore, app: AppHandle) {
+    pub fn start_listening (&mut self, shared_store: SharedStore, app: AppHandle) {
         // let _ = app.emit("mpris-event", msg);
 
         // let mut last_active_player: String = String::new();
@@ -130,28 +130,13 @@ impl MprisManager {
             let track_key = pc_allmeta(&active_player); // format!("{}|{}|{}|{}", title, artist, album, duration_raw);
             let position = parse_position(pc_position(&active_player));
 
-            let mut is_new = false;
-
-            if track_key != current.metadata.key {
-                if current.metadata.key != "" && current.metadata.len_secs > 0.0 {
-                    let store = shared_store.lock().expect("StatsStore poisoned");
-                    if let Ok(_) = store.flush_track(&current) {}
-                }
-                is_new = true;
-            }
-
             if let Some(song) = SongInfo::new(track_key.clone()) {
-                // stats
-                let mut stats = shared_stats.write().expect("Stats store poisoned");
-
-                if is_new {
+                if song.key != current.metadata.key && current.metadata.len_secs < 86400.0 {
+                    if current.metadata.key != "" {
+                        let store = shared_store.lock().expect("StatsStore poisoned");
+                        if let Ok(_) = store.flush_track(&current) {}
+                    }
                     current = SongStats { metadata: song.clone(), time: 0.0 };
-                }
-
-                let new_key = !stats.contains_key(&track_key);
-                let dict = &mut stats;
-                if new_key {
-                    dict.insert(track_key.clone(), current.clone());
                 }
                 current.time += 1.0;
 

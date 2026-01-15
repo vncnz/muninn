@@ -32,25 +32,35 @@ fn get_top_artists(store: tauri::State<'_, SharedStore>) -> Result<Vec<SongStats
 }
 
 
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             // let manager = Arc::new(Mutex::new(MprisManager::new()));
             let app_handle = app.handle().clone();
-            let stats: SharedStats = Arc::new(RwLock::new(HashMap::new()));
-            let store: SharedStore = Arc::new(Mutex::new(StatsStore::new(Path::new("/tmp/muninn.sqlite")).expect("Impossible to create database")));
+
+            let data_dir = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app data dir");
+
+            std::fs::create_dir_all(&data_dir)
+                .expect("Failed to create app data dir");
+
+            let db_path = data_dir.join("stats.sqlite");
+
+            // let stats: SharedStats = Arc::new(RwLock::new(HashMap::new()));
+            let store: SharedStore = Arc::new(Mutex::new(StatsStore::new(&db_path).expect("Impossible to create database")));
 
             // Register as global state
-            app.manage(stats.clone());
+            // app.manage(stats.clone());
             app.manage(store.clone());
 
-            let stats_clone = stats.clone();
+            // let stats_clone = stats.clone();
 
             // Background listener
             std::thread::spawn(move || {
-                MprisManager::new().start_listening(stats_clone, store, app_handle);
+                MprisManager::new().start_listening(store, app_handle);
             });
 
             Ok(())
