@@ -179,8 +179,8 @@ function App() {
 
       <h1>Statistics</h1>
       <div className="buttons">
-        <button onClick={() => { get_stats('song', {}) }}>Get stats songs</button>
-        <button onClick={() => { get_stats('artist', {}) }}>Get stats artists</button>
+        <button onClick={() => { get_stats('song', {}) }}>By song</button>
+        <button onClick={() => { get_stats('artist', {}) }}>By artist</button>
       </div>
       {/*<Pie data={stats} />*/}
       <VisualTable<songStatTable>
