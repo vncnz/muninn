@@ -139,7 +139,8 @@ function App() {
       artist: song.metadata.artist,
       album: song.metadata.album,
       len_secs: song.metadata.len_secs,
-      time: song.time
+      time: song.time,
+      ratio: song.metadata.len_secs > 0 ? song.time / song.metadata.len_secs : 0
     } as songStatTable
   })
 
@@ -149,13 +150,14 @@ function App() {
           {
             key: "time",
             label: "Time",
-            align: "right",
+            // align: "right",
             format: timeConversion
           },
+          { key: "ratio", label: "Count", format: (v: number) => Math.floor(v+0.1) },
           { key: "title", label: "Title" },
           { key: "artist", label: "Artist" },
           { key: "album", label: "Album" },
-          { key: "len_secs", label: "Duration (s)" }
+          { key: "len_secs", label: "Duration (s)", format: timeConversion }
         ]
   else if (groupType === 'artist') 
     columns = [

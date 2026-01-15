@@ -21,5 +21,6 @@ export type songStatTable = {
   artist: String,
   album: String,
   len_secs: number,
-  time: number
+  time: number,
+  ratio: number
 }
