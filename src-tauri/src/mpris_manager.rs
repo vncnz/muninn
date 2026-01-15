@@ -5,8 +5,10 @@ use tauri::AppHandle;
 use tauri::Emitter;
 use serde::{Serialize};
 
-use crate::SharedStats;
 use crate::SharedStore;
+
+const MAX_VALID_LENGTH_SECS: f64 = 86400.0;
+const MIN_TIME_TO_SAVE_SECS: f64 = 10.0;
 
 #[derive(Serialize, Clone, Default)]
 pub struct SongInfo {
@@ -44,6 +46,11 @@ impl SongInfo {
         None
     }
 }
+impl PartialEq for SongInfo {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
 
 #[derive(Serialize, Clone)]
 struct SongPlaying {
@@ -74,6 +81,8 @@ impl MprisManager {
         // let mut last_active_player: String = String::new();
 
         let mut current: SongStats = SongStats::default();
+        current.metadata.len_secs = MAX_VALID_LENGTH_SECS + 1.0;
+        let mut last_position = -1.0;
 
         loop {
             thread::sleep(Duration::from_millis(900));
@@ -130,18 +139,27 @@ impl MprisManager {
             let track_key = pc_allmeta(&active_player); // format!("{}|{}|{}|{}", title, artist, album, duration_raw);
             let position = parse_position(pc_position(&active_player));
 
-            if let Some(song) = SongInfo::new(track_key.clone()) {
-                if song.key != current.metadata.key && current.metadata.len_secs < 86400.0 {
-                    if current.metadata.key != "" {
-                        let store = shared_store.lock().expect("StatsStore poisoned");
-                        if let Ok(_) = store.flush_track(&current) {}
-                    }
-                    current = SongStats { metadata: song.clone(), time: 0.0 };
-                }
-                current.time += 1.0;
+            let opt_listening = SongInfo::new(track_key);
 
-                let _ = app.emit("mpris-event", SongPlaying { metadata: song, position });
+            let Some(listening) = opt_listening else {
+                continue;
+            };
+
+            if listening.key != current.metadata.key {
+                if current.metadata.len_secs < MAX_VALID_LENGTH_SECS && current.time > MIN_TIME_TO_SAVE_SECS {
+                    let store = shared_store.lock().expect("StatsStore poisoned");
+                    if let Ok(_) = store.flush_track(&current) {}
+                }
+                current = SongStats { metadata: listening.clone(), time: 0.0 };
+            } else if current.metadata.len_secs > MAX_VALID_LENGTH_SECS && listening.len_secs <= MAX_VALID_LENGTH_SECS {
+                current.metadata.len_secs = listening.len_secs;
             }
+            if (last_position < position) {
+                current.time += 1.0;
+            }
+            last_position = position;
+
+            let _ = app.emit("mpris-event", SongPlaying { metadata: listening, position });
 
             // let _ = app.emit("mpris-event", format!("{track_key}|{position}"));
             /*let changed = force_update || track_key != last_track_key;
