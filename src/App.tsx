@@ -157,7 +157,7 @@ function App() {
           { key: "title", label: "Title" },
           { key: "artist", label: "Artist" },
           { key: "album", label: "Album" },
-          { key: "len_secs", label: "Duration (s)", format: timeConversion }
+          { key: "len_secs", label: "Duration", format: timeConversion }
         ]
   else if (groupType === 'artist') 
     columns = [
