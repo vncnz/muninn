@@ -13,7 +13,7 @@ export type Artist = {
 }
 
 export type ArtistStat = {
-  id: number,
+  id?: number,
   name: String,
   listened_time: number
 }

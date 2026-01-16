@@ -1,9 +1,9 @@
 import classes from "./VisualTable.module.scss";
-import { useState, useEffect, useReducer } from "react";
+import { useState } from "react";
 
 // type counterDict = Record<string, number>;
 
-type Column<T> = {
+export type Column<T> = {
   key: keyof T;
   label: string;
   align?: "left" | "right";

@@ -1,6 +1,6 @@
 mod mpris_manager;
 mod database;
-use std::{path::Path, sync::{Arc, Mutex}};
+use std::{sync::{Arc, Mutex}};
 use crate::{database::StatsStore, mpris_manager::{ArtistStats, MprisManager, Song, SongStats}};
 use std::collections::HashMap;
 use tauri::{Manager};

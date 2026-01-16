@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 import { Artist, SongInfo, songPlaying, ArtistStat, songStatTable } from "./types";
-import { VisualTable } from "./VisualTable/VisualTable";
+import { VisualTable, Column } from "./VisualTable/VisualTable";
 
 /* function songDataReducer (_state: SongInfo, evt: String): any {
   let [title, artist, album, length, position] = evt.split('|')
@@ -174,7 +174,7 @@ function App() {
       { key: "artists", label: "Artist", format: artistsToString },
       { key: "album", label: "Album" },
       { key: "length", label: "Duration", format: timeConversion }
-    ]
+    ] as Column<songStatTable>[]
     table = <VisualTable<songStatTable>
       visualkey="listened_time"
       columns={columns}
@@ -189,7 +189,7 @@ function App() {
         format: timeConversion
       },
       { key: "name", label: "Artist" }
-    ]
+    ] as Column<ArtistStat>[]
     table = <VisualTable<ArtistStat>
       visualkey="listened_time"
       columns={columns}

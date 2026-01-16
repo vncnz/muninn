@@ -7,8 +7,8 @@ use serde::{Serialize};
 
 use crate::SharedStore;
 
-const MAX_VALID_LENGTH_SECS: f64 = 86400.0;
-const MIN_TIME_TO_SAVE_SECS: f64 = 10.0;
+// const MAX_VALID_LENGTH_SECS: f64 = 86400.0;
+// const MIN_TIME_TO_SAVE_SECS: f64 = 10.0;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Artist {
@@ -100,7 +100,7 @@ fn strip_length_from_string(s: &str) -> (String, String) {
     (s.to_string(), "".to_string())
 }
 
-impl SongInfo {
+/* impl SongInfo {
     fn new (evt: String) -> Option<SongInfo> {
         // let parts = evt.split("|").collect::<Vec<&str>>();
         let values: Vec<String> = evt
@@ -126,7 +126,7 @@ impl SongInfo {
         }
         None
     }
-}
+} */
 /* impl PartialEq for SongInfo {
     fn eq(&self, other: &Self) -> bool {
         self.key == other.key
@@ -221,7 +221,7 @@ impl MprisManager {
             let track_key = pc_allmeta(&active_player); // format!("{}|{}|{}|{}", title, artist, album, duration_raw);
             let position = parse_position(pc_position(&active_player));
 
-            let [ track_hash, length ] = strip_length_from_string(&track_key).try_into().expect("exactly 2 fields expected");
+            let [ track_hash, _length ] = strip_length_from_string(&track_key).try_into().expect("exactly 2 fields expected");
             // println!("Track hash: {}, length: {}", track_hash, length);
 
             if current.is_none() || current.as_ref().unwrap().hash != track_hash {
@@ -263,76 +263,9 @@ impl MprisManager {
             }
             last_position = position;
             let _ = app.emit("mpris-event", SongPlaying { metadata: current.clone().unwrap(), position });
-/*
-            let opt_listening = SongInfo::new(track_key);
-
-            let Some(listening) = opt_listening else {
-                continue;
-            };
-
-            if listening.key != current.metadata.key {
-                if current.metadata.len_secs < MAX_VALID_LENGTH_SECS && current.time > MIN_TIME_TO_SAVE_SECS {
-                    let store = shared_store.lock().expect("StatsStore poisoned");
-                    if let Ok(_) = store.flush_track(&current) {}
-                }
-                current = SongStats { metadata: listening.clone(), time: 0.0 };
-            } else if current.metadata.len_secs > MAX_VALID_LENGTH_SECS && listening.len_secs <= MAX_VALID_LENGTH_SECS {
-                current.metadata.len_secs = listening.len_secs;
-            }
-            if (last_position < position) {
-                current.time += 1.0;
-            }
-            last_position = position;
-
-            let _ = app.emit("mpris-event", SongPlaying { metadata: listening, position });
-*/
-            // let _ = app.emit("mpris-event", format!("{track_key}|{position}"));
-            /*let changed = force_update || track_key != last_track_key;
-            if !changed {
-                continue;
-            }
-
-            last_track_key = track_key.clone();
-
-            // 5. Aggiorna SongState
-            let mut do_fetch = false;
-
-            // 4. Leggi metadata dal player attivo
-            let mut title: String = "".into();
-            let mut artist = pc_meta(&active_player, "artist");
-            let mut album = pc_meta(&active_player, "album");
-            let mut duration_secs = 0.0;
-
-            if let Ok(mut s) = state.lock() {
-                let updated = s.update_metadata(&track_key);
-
-                if updated || force_update {
-                    title = s.title.clone();
-                    artist = s.artist.clone();
-                    album = s.album.clone();
-                    duration_secs = s.len_secs;
-                    s.lyrics.reset();
-                    do_fetch = true;
-                }
-            }
-
-            if !do_fetch {
-                continue;
-            }
-
-            // 6. Notifiche UI
-            if duration_secs < 1.0 || duration_secs > 3600.0 {
-                let _ = tx_notify.send(format!("Wrong length {duration_secs}"));
-                continue;
-            }
-            if artist.trim().is_empty() {
-                let _ = tx_notify.send("No artist".into());
-                continue;
-            }*/
 
             // let maybe_server_response = get_song_blocking(&title, &artist, &album, duration_secs);
         }
-        // });
     }
 }
 
@@ -382,7 +315,7 @@ fn pc_allmeta(player: &str) -> String {
 }
 
 // Helper for single metadata item
-fn pc_meta(player: &str, field: &str) -> String {
+/* fn pc_meta(player: &str, field: &str) -> String {
     let out = Command::new("playerctl")
         .arg("-p").arg(player)
         .arg("metadata")
@@ -393,9 +326,9 @@ fn pc_meta(player: &str, field: &str) -> String {
         Ok(o) => String::from_utf8_lossy(&o.stdout).trim().to_string(),
         Err(_) => "".into(),
     }
-}
+} */
 
-fn pc_template(player: &str, field: &str) -> String {
+/* fn pc_template(player: &str, field: &str) -> String {
     let out = Command::new("playerctl")
         .arg("-p").arg(player)
         .arg("metadata")
@@ -407,4 +340,4 @@ fn pc_template(player: &str, field: &str) -> String {
         Ok(o) => String::from_utf8_lossy(&o.stdout).trim().to_string(),
         Err(_) => "".into(),
     }
-}
+} */

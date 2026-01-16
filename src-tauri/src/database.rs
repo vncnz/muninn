@@ -1,9 +1,9 @@
 use std::path::Path;
 
-use rusqlite::{Connection, Result, fallible_streaming_iterator::FallibleStreamingIterator, params};
+use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
 
-use crate::mpris_manager::{Artist, ArtistStats, Song, SongInfo, SongStats};
+use crate::mpris_manager::{Artist, ArtistStats, Song};
 
 pub struct StatsStore {
     conn: rusqlite::Connection,
@@ -292,7 +292,7 @@ impl StatsStore {
 
         // Artist may be NULL (LEFT JOIN)
         let artist_id: Option<i32> = row.get(6)?;
-        if let Some(id) = artist_id {
+        if artist_id.is_some() {
             let artist = Artist {
                 id: artist_id,
                 name: row.get(7)?,
