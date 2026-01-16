@@ -1,9 +1,9 @@
-import { useState, useEffect, useReducer } from "react";
+import { useState, useEffect } from "react";
 // import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
-import { Artist, SongInfo, songPlaying, songStat, songStatTable } from "./types";
+import { Artist, SongInfo, songPlaying, ArtistStat, songStatTable } from "./types";
 import { VisualTable } from "./VisualTable/VisualTable";
 
 /* function songDataReducer (_state: SongInfo, evt: String): any {
@@ -34,7 +34,7 @@ import { VisualTable } from "./VisualTable/VisualTable";
     return arr.slice(0, 4).join('|')
   return ''
 } */
-type counterDict = Record<string, number>;
+// type counterDict = Record<string, number>;
 /* function statsReducer (_state: counterDict, evt: songStat[]): any {
   let map: counterDict = {}
   evt.forEach((el: songStat) => {
@@ -43,7 +43,8 @@ type counterDict = Record<string, number>;
 } */
 
 function App() {
-  const [stats, setStats] = useState([] as SongInfo[]);
+  const [songStats, setSongStats] = useState([] as SongInfo[]);
+  const [artistStats, setArtistStats] = useState([] as ArtistStat[]);
   const [song, setSong] = useState({
     metadata: { key: '', title: '', artists: [], album: '', length: 0, listened_time: 0 },
     position: 0
@@ -79,19 +80,21 @@ function App() {
     // TODO: download lyrics
     console.log(song)
   }
+
+  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
   async function get_stats(type: string, params: any) {
     params = params || {}
     setGroupType(type)
-    let s: SongInfo[] = []
     if (type === 'artist') {
-      s = await invoke("get_top_artists", {}) as SongInfo[]
+      let s = await invoke("get_top_artists", {}) as ArtistStat[]
+      console.log('artist stats', s)
+      setArtistStats(s)
     } else if (type === 'song') {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-      s = await invoke("get_stats_all", {}) as SongInfo[]
+      let s = await invoke("get_stats_all", {}) as SongInfo[]
+      console.log('song stats', s)
+      setSongStats(s)
     }
     // s.sort((a,b) => b.position - a.position)
-    setStats(s)
-    console.log('get_stats', s)
   }
   function timeToHuman (time: number) {
     let m = Math.floor(time / 60)
@@ -121,12 +124,18 @@ function App() {
   }
 
   /* let statsPie: counterDict = {}
-  Object.values(stats).forEach(el => {
+  Object.values(songStats).forEach(el => {
     let e = el as songStat
     statsPie[e.metadata.key] = e.position
   }) */
 
-    const artistsToString = (artists: Artist[]) => { return artists.map((a: Artist) => a.name).join(', ') }
+  const artistsToString = (artists: Artist[]) => {
+    if (!artists) {
+      console.log('no artists??')
+      return ''
+    }
+    return artists.map((a: Artist) => a.name).join(', ')
+  }
 
   let artist = artistsToString(song.metadata.artists)
   let songEl = song.metadata.title ? 
@@ -138,63 +147,70 @@ function App() {
     </div>
     :
     <div>No playing</div>
-  
-  let stats2 = stats.map((song: SongInfo) => {
-    return {
-      title: song.title,
-      artists: song.artists,
-      album: song.album,
-      length: song.length,
-      position: 0,
-      listened_time: song.listened_time,
-      ratio: song.length > 0 ? song.listened_time / song.length : 0
-    } as songStatTable
-  })
 
-  let columns: any[] = []
-  if (groupType === 'song') 
-    columns = [
-          {
-            key: "listened_time",
-            label: "Total\xa0time",
-            // align: "right",
-            format: timeConversion
-          },
-          { key: "ratio", label: "Count", format: (v: number) => Math.floor(v+0.1) },
-          { key: "title", label: "Title" },
-          { key: "artists", label: "Artist", format: artistsToString },
-          { key: "album", label: "Album" },
-          { key: "length", label: "Duration", format: timeConversion }
-        ]
-  else if (groupType === 'artist') 
-    columns = [
-          {
-            key: "position",
-            label: "Total\xa0time",
-            // align: "right"
-            format: timeConversion
-          },
-          { key: "artists", label: "Artist", format: artistsToString }
-        ]
+  let table
+  if (groupType === 'song')  {
+    console.log('songStats', songStats)
+    let stats2 = songStats.map((song: SongInfo) => {
+      return {
+        title: song.title,
+        artists: song.artists,
+        album: song.album,
+        length: song.length,
+        position: 0,
+        listened_time: song.listened_time,
+        ratio: song.length > 0 ? song.listened_time / song.length : 0
+      } as songStatTable
+    })
+    let columns = [
+      {
+        key: "listened_time",
+        label: "Total\xa0time",
+        // align: "right",
+        format: timeConversion
+      },
+      { key: "ratio", label: "Count", format: (v: number) => Math.floor(v+0.1) },
+      { key: "title", label: "Title" },
+      { key: "artists", label: "Artist", format: artistsToString },
+      { key: "album", label: "Album" },
+      { key: "length", label: "Duration", format: timeConversion }
+    ]
+    table = <VisualTable<songStatTable>
+      visualkey="listened_time"
+      columns={columns}
+      rows={stats2}
+    />
+  } else if (groupType === 'artist') {
+    let columns = [
+      {
+        key: "listened_time",
+        label: "Total\xa0time",
+        // align: "right"
+        format: timeConversion
+      },
+      { key: "name", label: "Artist" }
+    ]
+    table = <VisualTable<ArtistStat>
+      visualkey="listened_time"
+      columns={columns}
+      rows={artistStats}
+    />
+  }
     
 
   return (
     <main className="container">
       <h1>Current song</h1>
       <div>{songEl}</div>
-      {/*<button onClick={() => { get_stats() }}>Get stats</button>*/}
+      {/*<button onClick={() => { get_stats() }}>Get songStats</button>*/}
 
       <h1>Statistics</h1>
       <div className="buttons">
         <button onClick={() => { get_stats('song', {}) }}>By song</button>
         <button onClick={() => { get_stats('artist', {}) }}>By artist</button>
       </div>
-      {/*<Pie data={stats} />*/}
-      <VisualTable<songStatTable>
-        visualkey="position"
-        columns={columns}
-        rows={stats2}
-      />
+      {/*<Pie data={songStats} />*/}
+      {table}
     </main>
   );
 }

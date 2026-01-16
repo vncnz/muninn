@@ -1,15 +1,15 @@
 use std::path::Path;
 
-use rusqlite::{Connection, Result, params};
+use rusqlite::{Connection, Result, fallible_streaming_iterator::FallibleStreamingIterator, params};
 use std::collections::HashMap;
 
-use crate::mpris_manager::{Artist, Song, SongInfo, SongStats};
+use crate::mpris_manager::{Artist, ArtistStats, Song, SongInfo, SongStats};
 
 pub struct StatsStore {
     conn: rusqlite::Connection,
 }
 
-const CURRENT_DB_VERSION: i32 = 5;
+const CURRENT_DB_VERSION: i32 = 6;
 impl StatsStore {
     pub fn new(app_dir: &Path) -> rusqlite::Result<Self> {
         // let conn = Connection::open_in_memory()?;
@@ -31,6 +31,11 @@ impl StatsStore {
                 [],
             )?;
         } else {
+            /* conn.execute_batch("
+                reindex idx_artists_name;
+                reindex idx_song_artists_song;
+                reindex idx_song_artists_artist;
+            ")?; */
             println!("Database version {} is up to date", version);
         }
 
@@ -38,6 +43,7 @@ impl StatsStore {
     }
 
     fn reset_database(conn: &Connection) -> rusqlite::Result<()> {
+        conn.execute("DROP TABLE IF EXISTS song;", [])?;
         conn.execute("DROP TABLE IF EXISTS songs;", [])?;
         conn.execute("DROP TABLE IF EXISTS artists;", [])?;
         conn.execute("DROP TABLE IF EXISTS song_artists;", [])?;
@@ -104,10 +110,13 @@ impl StatsStore {
 
         let mut rows = stmt.query(params![hash])?;
 
+        // println!("Querying song by hash: {:?}, {} results", hash, rows.size_hint().0);
+
         let mut song: Option<Song> = None;
         let mut artists: Vec<Artist> = Vec::new();
 
         while let Some(row) = rows.next()? {
+            // println!("Processing row for song id: {:?}", row.get::<_, Option<i32>>(0)?);
             if song.is_none() {
                 song = Some(Song {
                     id: Some(row.get(0)?),
@@ -120,8 +129,8 @@ impl StatsStore {
                 });
             }
 
-            let artist_id: Option<i32> = row.get(5)?;
-            let artist_name: Option<String> = row.get(6)?;
+            let artist_id: Option<i32> = row.get(6)?;
+            let artist_name: Option<String> = row.get(7)?;
 
             if let (Some(id), Some(name)) = (artist_id, artist_name) {
                 artists.push(Artist {
@@ -135,8 +144,10 @@ impl StatsStore {
             if !artists.is_empty() {
                 s.artists = Some(artists);
             }
+            // println!("gsbh - Found song for hash: {:?}", hash);
             Ok(Some(s))
         } else {
+            // println!("gsbh - No song found for hash: {:?}", hash);
             Ok(None)
         }
     }
@@ -243,60 +254,75 @@ impl StatsStore {
                 s.title,
                 s.album,
                 s.length,
+                s.listened_time,
                 a.id,
-                a.name,
-                s.listened_time
+                a.name
             FROM songs s
             LEFT JOIN song_artists sa ON sa.song_id = s.id
             LEFT JOIN artists a ON a.id = sa.artist_id
-            ORDER BY s.listened_time DESC
+            ORDER BY s.listened_time DESC, a.name ASC
             "#
         )?;
 
         let mut rows = stmt.query([])?;
 
-        let mut songs_map: HashMap<i32, Song> = HashMap::new();
+    let mut songs: Vec<Song> = Vec::new();
+    let mut index: HashMap<i32, usize> = HashMap::new();
 
-        while let Some(row) = rows.next()? {
-            let song_id: i32 = row.get(0)?;
-            let song = songs_map.entry(song_id).or_insert(Song {
+    while let Some(row) = rows.next()? {
+        let song_id: i32 = row.get(0)?;
+
+        let song_pos = if let Some(&pos) = index.get(&song_id) {
+            pos
+        } else {
+            let song = Song {
                 id: Some(song_id),
                 hash: row.get(1)?,
                 title: row.get(2)?,
                 album: row.get(3)?,
                 length: row.get(4)?,
-                listened_time: row.get(7)?,
+                listened_time: row.get(5)?,
                 artists: Some(Vec::new()),
-            });
+            };
+            songs.push(song);
+            let pos = songs.len() - 1;
+            index.insert(song_id, pos);
+            pos
+        };
 
-            let artist_id: Option<i32> = row.get(5)?;
-            let artist_name: Option<String> = row.get(6)?;
-
-            if let (Some(id), Some(name)) = (artist_id, artist_name) {
-                song.artists.as_mut().unwrap().push(Artist {
-                    id: Some(id),
-                    name,
-                });
-            }
+        // Artist may be NULL (LEFT JOIN)
+        let artist_id: Option<i32> = row.get(6)?;
+        if let Some(id) = artist_id {
+            let artist = Artist {
+                id: artist_id,
+                name: row.get(7)?,
+            };
+            songs[song_pos].artists.as_mut().unwrap().push(artist);
         }
+    }
 
-        Ok(songs_map.into_values().collect())
+    Ok(songs)
     }
 
 
-    pub fn get_top_artists(&self) -> Vec<SongStats> {
+    pub fn get_top_artists(&self) -> Vec<ArtistStats> {
         let mut results = Vec::new();
-        let mut stmt = self.conn.prepare("SELECT artist, SUM(time) FROM song group by artist order by SUM(time) desc").expect("prepare ko");
+        let mut stmt = self.conn.prepare("
+            SELECT
+                a.id,
+                a.name,
+                SUM(s.listened_time) AS total_listened_time
+            FROM artists a
+            JOIN song_artists sa ON sa.artist_id = a.id
+            JOIN songs s         ON s.id = sa.song_id
+            GROUP BY a.id, a.name
+            ORDER BY total_listened_time DESC
+        ").expect("prepare ko");
         let songs = stmt.query_map([], |row| {
-            Ok(SongStats {
-                metadata: SongInfo {
-                    key: row.get(0).expect("Artist in query"),
-                    title: "".to_string(),
-                    artist: row.get(0).expect("Artist in query"),
-                    album: "".to_string(),
-                    len_secs: 0.0
-                },
-                time: row.get(1).expect("sum_time in query")
+            Ok(ArtistStats {
+                id: Some(row.get(0).expect("Artist id in query")),
+                name: row.get(1).expect("Artist in query"),
+                listened_time: row.get(2).expect("sum_time in query")
             })
         });
 

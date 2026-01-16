@@ -1,7 +1,7 @@
 mod mpris_manager;
 mod database;
 use std::{path::Path, sync::{Arc, Mutex}};
-use crate::{database::StatsStore, mpris_manager::{MprisManager, Song, SongStats}};
+use crate::{database::StatsStore, mpris_manager::{ArtistStats, MprisManager, Song, SongStats}};
 use std::collections::HashMap;
 use tauri::{Manager};
 use std::sync::{RwLock};
@@ -26,7 +26,7 @@ fn get_stats_all(store: tauri::State<'_, SharedStore>) -> Result<Vec<Song>, Stri
 }
 
 #[tauri::command]
-fn get_top_artists(store: tauri::State<'_, SharedStore>) -> Result<Vec<SongStats>, String> {
+fn get_top_artists(store: tauri::State<'_, SharedStore>) -> Result<Vec<ArtistStats>, String> {
     let store = store.lock().expect("StatsStore poisoned");
     Ok(store.get_top_artists())
 }
@@ -48,6 +48,7 @@ pub fn run() {
                 .expect("Failed to create app data dir");
 
             let db_path = data_dir.join("stats.sqlite");
+            println!("Database path: {:?}", db_path);
 
             // let stats: SharedStats = Arc::new(RwLock::new(HashMap::new()));
             let store: SharedStore = Arc::new(Mutex::new(StatsStore::new(&db_path).expect("Impossible to create database")));

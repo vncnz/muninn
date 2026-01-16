@@ -12,6 +12,12 @@ export type Artist = {
   name: String
 }
 
+export type ArtistStat = {
+  id: number,
+  name: String,
+  listened_time: number
+}
+
 export type songPlaying = {
   metadata: SongInfo,
   position: number
@@ -27,6 +33,6 @@ export type songStatTable = {
   artists: Artist[],
   album: String,
   length: number,
-  position: number,
+  listened_time: number,
   ratio: number
 }

@@ -17,6 +17,13 @@ pub struct Artist {
 }
 
 #[derive(Serialize, Clone, Debug)]
+pub struct ArtistStats {
+    pub id: Option<i32>,
+    pub name: String,
+    pub listened_time: f64
+}
+
+#[derive(Serialize, Clone, Debug)]
 pub struct Song {
     pub id: Option<i32>,
     pub hash: String,
@@ -81,9 +88,9 @@ pub struct SongInfo {
   pub len_secs: f64
 }
 
-fn get_song_hash(title: &str, artist: &str, album: &str) -> String {
+/* fn get_song_hash(title: &str, artist: &str, album: &str) -> String {
     format!("{}|{}|{}", title, artist, album)
-}
+} */
 
 fn strip_length_from_string(s: &str) -> (String, String) {
     let parts: Vec<&str> = s.rsplitn(2, '|').collect();
@@ -214,19 +221,28 @@ impl MprisManager {
             let track_key = pc_allmeta(&active_player); // format!("{}|{}|{}|{}", title, artist, album, duration_raw);
             let position = parse_position(pc_position(&active_player));
 
-            let [ track_hash, _length ] = strip_length_from_string(&track_key).try_into().expect("exactly 2 fields expected");
+            let [ track_hash, length ] = strip_length_from_string(&track_key).try_into().expect("exactly 2 fields expected");
+            // println!("Track hash: {}, length: {}", track_hash, length);
 
             if current.is_none() || current.as_ref().unwrap().hash != track_hash {
                 if current.is_some() {
                     let mut store = shared_store.lock().expect("StatsStore poisoned");
-                    eprintln!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().title, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
+                    eprintln!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().hash, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
                     store.increase_time(current.as_ref().unwrap().id.unwrap(), cumulative_time).expect("Impossible to update time");
                 }
                 let on_database: Option<Song> = {
                     let store = shared_store.lock().expect("StatsStore poisoned");
-                    if let Ok(song) = store.get_song_by_hash(&track_hash) {
-                        song
+                    // println!("Looking for track hash {:?} ({}) in database", track_hash, track_hash.len());
+                    if let Ok(opt_song) = store.get_song_by_hash(&track_hash) {
+                        if let Some(song) = opt_song {
+                            println!("Found track {} in database", song.id.unwrap());
+                            Some(song)
+                        } else {
+                            println!("Track {} not found in database", track_hash);
+                            None
+                        }
                     } else {
+                        println!("Track {} not found in database -- QUERY ERROR", track_hash);
                         None
                     }
                 };
@@ -236,7 +252,8 @@ impl MprisManager {
                 } else {
                     current = Song::new(track_key.clone());
                     let mut store = shared_store.lock().expect("StatsStore poisoned");
-                    store.insert_song(current.as_ref().unwrap()).expect("Impossible to insert song");
+                    println!("Inserting new track {:?} ({}) into database", current.as_ref().unwrap().hash, current.as_ref().unwrap().hash.len());
+                    current = Some(store.insert_song(current.as_ref().unwrap()).expect("Impossible to insert song"));
                 }
                 cumulative_time = 0.0;
             }
