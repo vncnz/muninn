@@ -3,10 +3,10 @@ import { useState, useEffect, useReducer } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
-import { songInfo, songPlaying, songStat, songStatTable } from "./types";
+import { Artist, SongInfo, songPlaying, songStat, songStatTable } from "./types";
 import { VisualTable } from "./VisualTable/VisualTable";
 
-/* function songDataReducer (_state: songInfo, evt: String): any {
+/* function songDataReducer (_state: SongInfo, evt: String): any {
   let [title, artist, album, length, position] = evt.split('|')
   return {
     title,
@@ -16,7 +16,7 @@ import { VisualTable } from "./VisualTable/VisualTable";
     position: parseInt(position) / 1000.0 / 1000.0
   }
 } */
-/* function songBuilder (evt: String): songInfo {
+/* function songBuilder (evt: String): SongInfo {
   let [title, artist, album, length, position] = evt.split('|')
   return {
     key: stripDuration(evt),
@@ -38,14 +38,17 @@ type counterDict = Record<string, number>;
 /* function statsReducer (_state: counterDict, evt: songStat[]): any {
   let map: counterDict = {}
   evt.forEach((el: songStat) => {
-    map[el.metadata.key] = el.time
+    map[el.metadata.key] = el.position
   })
 } */
 
 function App() {
-  const [stats, setStats] = useState([] as songStat[]);
-  const [song, setSong] = useState({ metadata: { key: '', title: '', artist: '', album: '', len_secs: 0 }, position: 0 } as songPlaying);
-  // const [song, songDispatch] = useReducer(songDataReducer, { title: '', artist: '', album: '', length: 0, position: 0 } as songInfo)
+  const [stats, setStats] = useState([] as SongInfo[]);
+  const [song, setSong] = useState({
+    metadata: { key: '', title: '', artists: [], album: '', length: 0, listened_time: 0 },
+    position: 0
+  } as songPlaying);
+  // const [song, songDispatch] = useReducer(songDataReducer, { title: '', artist: '', album: '', length: 0, position: 0 } as SongInfo)
 
   const [groupType, setGroupType] = useState('song')
 
@@ -72,21 +75,21 @@ function App() {
     };
   }, []); // empty dependency array -> run once
 
-  const downloadLyrics = (song: songInfo) => {
+  const downloadLyrics = (song: SongInfo) => {
     // TODO: download lyrics
     console.log(song)
   }
   async function get_stats(type: string, params: any) {
     params = params || {}
     setGroupType(type)
-    let s: songStat[] = []
+    let s: SongInfo[] = []
     if (type === 'artist') {
-      s = await invoke("get_top_artists", {}) as songStat[]
+      s = await invoke("get_top_artists", {}) as SongInfo[]
     } else if (type === 'song') {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-      s = await invoke("get_stats_all", {}) as songStat[]
+      s = await invoke("get_stats_all", {}) as SongInfo[]
     }
-    // s.sort((a,b) => b.time - a.time)
+    // s.sort((a,b) => b.position - a.position)
     setStats(s)
     console.log('get_stats', s)
   }
@@ -120,27 +123,31 @@ function App() {
   /* let statsPie: counterDict = {}
   Object.values(stats).forEach(el => {
     let e = el as songStat
-    statsPie[e.metadata.key] = e.time
+    statsPie[e.metadata.key] = e.position
   }) */
 
+    const artistsToString = (artists: Artist[]) => { return artists.map((a: Artist) => a.name).join(', ') }
+
+  let artist = artistsToString(song.metadata.artists)
   let songEl = song.metadata.title ? 
     <div>
       <div>Title: {song.metadata.title}</div>
-      <div>Artist: {song.metadata.artist}</div>
+      <div>Artist: {artist}</div>
       <div>Album: {song.metadata.album}</div>
-      { song.metadata.len_secs > 0 && <div>Time: {timeToHuman(song.position)} / {timeToHuman(song.metadata.len_secs)} ({toPercent(song.position/song.metadata.len_secs)})</div> }
+      { song.metadata.length > 0 && <div>Time: {timeToHuman(song.position)} / {timeToHuman(song.metadata.length)} ({toPercent(song.position/song.metadata.length)})</div> }
     </div>
     :
     <div>No playing</div>
   
-  let stats2 = stats.map((song: songStat) => {
+  let stats2 = stats.map((song: SongInfo) => {
     return {
-      title: song.metadata.title,
-      artist: song.metadata.artist,
-      album: song.metadata.album,
-      len_secs: song.metadata.len_secs,
-      time: song.time,
-      ratio: song.metadata.len_secs > 0 ? song.time / song.metadata.len_secs : 0
+      title: song.title,
+      artists: song.artists,
+      album: song.album,
+      length: song.length,
+      position: 0,
+      listened_time: song.listened_time,
+      ratio: song.length > 0 ? song.listened_time / song.length : 0
     } as songStatTable
   })
 
@@ -148,26 +155,26 @@ function App() {
   if (groupType === 'song') 
     columns = [
           {
-            key: "time",
-            label: "Time",
+            key: "listened_time",
+            label: "Total\xa0time",
             // align: "right",
             format: timeConversion
           },
           { key: "ratio", label: "Count", format: (v: number) => Math.floor(v+0.1) },
           { key: "title", label: "Title" },
-          { key: "artist", label: "Artist" },
+          { key: "artists", label: "Artist", format: artistsToString },
           { key: "album", label: "Album" },
-          { key: "len_secs", label: "Duration", format: timeConversion }
+          { key: "length", label: "Duration", format: timeConversion }
         ]
   else if (groupType === 'artist') 
     columns = [
           {
-            key: "time",
+            key: "position",
             label: "Total\xa0time",
             // align: "right"
             format: timeConversion
           },
-          { key: "artist", label: "Artist" }
+          { key: "artists", label: "Artist", format: artistsToString }
         ]
     
 
@@ -184,7 +191,7 @@ function App() {
       </div>
       {/*<Pie data={stats} />*/}
       <VisualTable<songStatTable>
-        visualkey="time"
+        visualkey="position"
         columns={columns}
         rows={stats2}
       />

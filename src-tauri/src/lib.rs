@@ -1,7 +1,7 @@
 mod mpris_manager;
 mod database;
 use std::{path::Path, sync::{Arc, Mutex}};
-use crate::{database::StatsStore, mpris_manager::{MprisManager, SongStats}};
+use crate::{database::StatsStore, mpris_manager::{MprisManager, Song, SongStats}};
 use std::collections::HashMap;
 use tauri::{Manager};
 use std::sync::{RwLock};
@@ -20,9 +20,9 @@ fn get_stats(state: tauri::State<'_, SharedStats>) -> Result<HashMap<String, Son
 }
 
 #[tauri::command]
-fn get_stats_all(store: tauri::State<'_, SharedStore>) -> Result<Vec<SongStats>, String> {
+fn get_stats_all(store: tauri::State<'_, SharedStore>) -> Result<Vec<Song>, String> {
     let store = store.lock().expect("StatsStore poisoned");
-    Ok(store.get_all())
+    Ok(store.get_top_songs().expect("Impossible to get songs"))
 }
 
 #[tauri::command]

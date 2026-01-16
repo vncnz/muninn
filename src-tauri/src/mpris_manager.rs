@@ -10,6 +10,68 @@ use crate::SharedStore;
 const MAX_VALID_LENGTH_SECS: f64 = 86400.0;
 const MIN_TIME_TO_SAVE_SECS: f64 = 10.0;
 
+#[derive(Serialize, Clone, Debug)]
+pub struct Artist {
+    pub id: Option<i32>,
+    pub name: String
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct Song {
+    pub id: Option<i32>,
+    pub hash: String,
+    pub title: String,
+    pub album: String,
+    pub length: i32,
+    pub artists: Option<Vec<Artist>>,
+    pub listened_time: f64
+}
+
+impl Song {
+    fn new (evt: String) -> Option<Song> {
+        // let parts = evt.split("|").collect::<Vec<&str>>();
+        let values: Vec<String> = evt
+            .split('|')
+            .map(|s| s.to_string())
+            .collect();
+
+        // println!("{:?}", &values);
+
+        if values.len() == 4 {
+            let [title, artist, album, length] =
+                values.try_into().expect("exactly 4 fields expected");
+            let length = if let Ok(l) = length.parse::<i64>() { l } else { i64::MAX };
+            let len_secs = (length as f64) / 1000.0 / 1000.0;
+
+            let artists = artist.split(", ")
+                .map(|name| Artist { id: None, name: name.to_string() })
+                .collect::<Vec<Artist>>();
+
+            return Some(Song {
+                id: None,
+                hash: format!("{}|{}|{}", title, artist, album),
+                title,
+                artists: Some(artists),
+                album,
+                length: len_secs as i32,
+                listened_time: 0.0
+            })
+        }
+        None
+    }
+}
+
+
+
+
+
+
+
+/* pub struct SongArtist {
+    pub song_id: i32,
+    pub artist_id: i32
+} */
+
 #[derive(Serialize, Clone, Default)]
 pub struct SongInfo {
   pub key: String,
@@ -17,6 +79,18 @@ pub struct SongInfo {
   pub artist: String,
   pub album: String,
   pub len_secs: f64
+}
+
+fn get_song_hash(title: &str, artist: &str, album: &str) -> String {
+    format!("{}|{}|{}", title, artist, album)
+}
+
+fn strip_length_from_string(s: &str) -> (String, String) {
+    let parts: Vec<&str> = s.rsplitn(2, '|').collect();
+    if parts.len() == 2 {
+        return (parts[1].to_string(), parts[0].to_string());
+    }
+    (s.to_string(), "".to_string())
 }
 
 impl SongInfo {
@@ -46,15 +120,15 @@ impl SongInfo {
         None
     }
 }
-impl PartialEq for SongInfo {
+/* impl PartialEq for SongInfo {
     fn eq(&self, other: &Self) -> bool {
         self.key == other.key
     }
-}
+} */
 
 #[derive(Serialize, Clone)]
 struct SongPlaying {
-    metadata: SongInfo,
+    metadata: Song,
     position: f64
 }
 
@@ -80,9 +154,10 @@ impl MprisManager {
 
         // let mut last_active_player: String = String::new();
 
-        let mut current: SongStats = SongStats::default();
-        current.metadata.len_secs = MAX_VALID_LENGTH_SECS + 1.0;
+        let mut current: Option<Song> = None;
+        // current.metadata.len_secs = MAX_VALID_LENGTH_SECS + 1.0;
         let mut last_position = -1.0;
+        let mut cumulative_time = 0.0;
 
         loop {
             thread::sleep(Duration::from_millis(900));
@@ -139,6 +214,39 @@ impl MprisManager {
             let track_key = pc_allmeta(&active_player); // format!("{}|{}|{}|{}", title, artist, album, duration_raw);
             let position = parse_position(pc_position(&active_player));
 
+            let [ track_hash, _length ] = strip_length_from_string(&track_key).try_into().expect("exactly 2 fields expected");
+
+            if current.is_none() || current.as_ref().unwrap().hash != track_hash {
+                if current.is_some() {
+                    let mut store = shared_store.lock().expect("StatsStore poisoned");
+                    eprintln!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().title, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
+                    store.increase_time(current.as_ref().unwrap().id.unwrap(), cumulative_time).expect("Impossible to update time");
+                }
+                let on_database: Option<Song> = {
+                    let store = shared_store.lock().expect("StatsStore poisoned");
+                    if let Ok(song) = store.get_song_by_hash(&track_hash) {
+                        song
+                    } else {
+                        None
+                    }
+                };
+
+                if on_database.is_some() {
+                    current = on_database;
+                } else {
+                    current = Song::new(track_key.clone());
+                    let mut store = shared_store.lock().expect("StatsStore poisoned");
+                    store.insert_song(current.as_ref().unwrap()).expect("Impossible to insert song");
+                }
+                cumulative_time = 0.0;
+            }
+
+            if last_position < position {
+                cumulative_time += 1.0;
+            }
+            last_position = position;
+            let _ = app.emit("mpris-event", SongPlaying { metadata: current.clone().unwrap(), position });
+/*
             let opt_listening = SongInfo::new(track_key);
 
             let Some(listening) = opt_listening else {
@@ -160,7 +268,7 @@ impl MprisManager {
             last_position = position;
 
             let _ = app.emit("mpris-event", SongPlaying { metadata: listening, position });
-
+*/
             // let _ = app.emit("mpris-event", format!("{track_key}|{position}"));
             /*let changed = force_update || track_key != last_track_key;
             if !changed {

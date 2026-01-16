@@ -1,26 +1,32 @@
-export type songInfo = {
+export type SongInfo = {
   key: string,
   title: String,
-  artist: String,
+  artists: Artist[],
   album: String,
-  len_secs: number
+  length: number,
+  listened_time: number
+}
+
+export type Artist = {
+  id?: number,
+  name: String
 }
 
 export type songPlaying = {
-  metadata: songInfo,
+  metadata: SongInfo,
   position: number
 }
 
 export type songStat = {
-  metadata: songInfo,
-  time: number
+  metadata: SongInfo,
+  position: number
 }
 
 export type songStatTable = {
   title: String,
-  artist: String,
+  artists: Artist[],
   album: String,
-  len_secs: number,
-  time: number,
+  length: number,
+  position: number,
   ratio: number
 }
