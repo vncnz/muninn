@@ -36,9 +36,9 @@ pub struct Song {
 
 impl Song {
     fn new (evt: String) -> Option<Song> {
-        // let parts = evt.split("|").collect::<Vec<&str>>();
+        // let parts = evt.split("\x1F").collect::<Vec<&str>>();
         let values: Vec<String> = evt
-            .split('|')
+            .split('\x1F')
             .map(|s| s.to_string())
             .collect();
 
@@ -56,7 +56,7 @@ impl Song {
 
             return Some(Song {
                 id: None,
-                hash: format!("{}|{}|{}", title, artist, album),
+                hash: format!("{}\x1F{}\x1F{}", title, artist, album),
                 title,
                 artists: Some(artists),
                 album,
@@ -89,11 +89,11 @@ pub struct SongInfo {
 }
 
 /* fn get_song_hash(title: &str, artist: &str, album: &str) -> String {
-    format!("{}|{}|{}", title, artist, album)
+    format!("{}\x1F{}\x1F{}", title, artist, album)
 } */
 
-fn strip_length_from_string(s: &str) -> (String, String) {
-    let parts: Vec<&str> = s.rsplitn(2, '|').collect();
+fn strip_last_chunk_from_string(s: &str) -> (String, String) {
+    let parts: Vec<&str> = s.rsplitn(2, '\x1F').collect();
     if parts.len() == 2 {
         return (parts[1].to_string(), parts[0].to_string());
     }
@@ -102,9 +102,9 @@ fn strip_length_from_string(s: &str) -> (String, String) {
 
 /* impl SongInfo {
     fn new (evt: String) -> Option<SongInfo> {
-        // let parts = evt.split("|").collect::<Vec<&str>>();
+        // let parts = evt.split("\x1F").collect::<Vec<&str>>();
         let values: Vec<String> = evt
-            .split('|')
+            .split('\x1F')
             .map(|s| s.to_string())
             .collect();
 
@@ -117,7 +117,7 @@ fn strip_length_from_string(s: &str) -> (String, String) {
             let len_secs = (length as f64) / 1000.0 / 1000.0;
 
             return Some(SongInfo {
-                key: format!("{}|{}|{}", title, artist, album),
+                key: format!("{}\x1F{}\x1F{}", title, artist, album),
                 title,
                 artist,
                 album,
@@ -218,10 +218,18 @@ impl MprisManager {
             }*/
 
             // Getting the metadata string
-            let track_key = pc_allmeta(&active_player); // format!("{}|{}|{}|{}", title, artist, album, duration_raw);
+            let full_track_key = pc_allmeta(&active_player); // format!("{}\x1F{}\x1F{}\x1F{}", title, artist, album, duration_raw);
+
+            let [ track_key, url ] = strip_last_chunk_from_string(&full_track_key).try_into().expect("exactly 2 fields expected");
+
+            if url.contains("youtube") {
+                // println!("Skipping YouTube track");
+                continue;
+            }
+
             let position = parse_position(pc_position(&active_player));
 
-            let [ track_hash, _length ] = strip_length_from_string(&track_key).try_into().expect("exactly 2 fields expected");
+            let [ track_hash, _length ] = strip_last_chunk_from_string(&track_key).try_into().expect("exactly 2 fields expected");
             // println!("Track hash: {}, length: {}", track_hash, length);
 
             if current.is_none() || current.as_ref().unwrap().hash != track_hash {
@@ -251,9 +259,13 @@ impl MprisManager {
                     current = on_database;
                 } else {
                     current = Song::new(track_key.clone());
-                    let mut store = shared_store.lock().expect("StatsStore poisoned");
-                    println!("Inserting new track {:?} ({}) into database", current.as_ref().unwrap().hash, current.as_ref().unwrap().hash.len());
-                    current = Some(store.insert_song(current.as_ref().unwrap()).expect("Impossible to insert song"));
+                    if current.is_some() {
+                        let mut store = shared_store.lock().expect("StatsStore poisoned");
+                        println!("Inserting new track {:?} ({}) into database", current.as_ref().unwrap().hash, current.as_ref().unwrap().hash.len());
+                        current = Some(store.insert_song(current.as_ref().unwrap()).expect("Impossible to insert song"));
+                    } else {
+                        println!("Impossible to parse track key: {}", track_key);
+                    }
                 }
                 cumulative_time = 0.0;
             }
@@ -262,7 +274,9 @@ impl MprisManager {
                 cumulative_time += 1.0;
             }
             last_position = position;
-            let _ = app.emit("mpris-event", SongPlaying { metadata: current.clone().unwrap(), position });
+            if current.is_some() {
+                let _ = app.emit("mpris-event", SongPlaying { metadata: current.clone().unwrap(), position });
+            }
 
             // let maybe_server_response = get_song_blocking(&title, &artist, &album, duration_secs);
         }
@@ -305,7 +319,7 @@ fn pc_allmeta(player: &str) -> String {
         .arg("-p").arg(player)
         .arg("metadata")
         .arg("--format")
-        .arg("{{title}}|{{artist}}|{{album}}|{{mpris:length}}")
+        .arg("{{title}}\x1F{{artist}}\x1F{{album}}\x1F{{mpris:length}}\x1F{{xesam:url}}")
         .output();
 
     match out {
