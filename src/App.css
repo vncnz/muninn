@@ -17,10 +17,38 @@
   --table-row-hover-bg: coral;
 }
 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 .container {
   margin: 0;
   display: flex;
   flex-direction: column;
+  gap: 2em;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+
+  h1 {
+    margin-bottom: .5em;
+  }
+
+  & > div {
+    padding: 1em;
+  }
+
+  & > .playing-info {
+    flex: 0 0 auto;
+    overflow: auto;
+  }
+
+  & > .other {
+    flex: 1 1 auto;
+    overflow: auto;
+  }
 }
 
 a {

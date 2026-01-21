@@ -1,4 +1,5 @@
-import { SongInfo, SongPlaying } from "../types";
+import { SongPlaying } from "../types";
+import { timeToHuman } from "../utils";
 import classes from "./Lyrics.module.scss";
 import { useState, useEffect } from "react";
 
@@ -17,28 +18,33 @@ type LyricsResponse = {
 }
 
 type LyricsRow = {
-    timeFormatted?: string,
     time: number,
     text: String
 }
 
 export function Lyrics({ playing }: { playing: SongPlaying }) {
-    const [lyrics, setLyrics] = useState([] as LyricsRow[]);
-    let loadedTitle = null
-    console.log('Lyrics render', playing.metadata.title)
+    const [lyrics, setLyrics] = useState([] as LyricsRow[])
+    const [loading, setLoading] = useState(false)
+    const [lastLoaded, setLastLoaded] = useState<String|null>(null)
 
     useEffect(() => {
-        console.log('Lyrics useEffect', playing.metadata.title)
         let cancelled = false;
 
         async function load() {
-            loadedTitle = playing.metadata.title
-            const data = await fetchLyrics(playing);
-            if (!data) loadedTitle = null
-            if (!cancelled) setLyrics((data?.syncedLyrics || []) as LyricsRow[]);
+            setLoading(true)
+            setLastLoaded(playing.metadata.title)
+            fetchLyrics(playing).then(data => {
+                if (!data) setLastLoaded(null)
+                /* if (!cancelled) */ setLyrics(data?.syncedLyrics || []);
+                console.log('Fetched lyrics', data)
+                setLoading(false)
+            }).catch(err => {
+                console.error('Error fetching lyrics', err);
+                setLoading(false)
+            })
         }
 
-        load();
+        if (lastLoaded != playing.metadata.title && !loading) load();
         return () => { cancelled = true; };
     }, [playing]);
 
@@ -48,7 +54,7 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
         
         // https://lrclib.net/api/get?artist_name={art}&track_name={title}&album_name={alb}&duration={dur}
         const artists = (song.metadata.artists.map(a => a.name).join(", "))
-        const response = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artists)}&track_name=${encodeURIComponent(song.metadata.title.toString())}&album_name=${song.metadata.album}&duration=${song.metadata.length}`);
+        const response = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artists)}&track_name=${encodeURIComponent(song.metadata.title.toString())}&album_name=${encodeURIComponent(song.metadata.album.toString())}&duration=${song.metadata.length}`);
         if (response.ok) {
             const data = await response.json();
             console.log('resp', data)
@@ -64,7 +70,7 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
                         let seconds = parseFloat(match[2]);
                         let text = match[3].trim();
                         let time = minutes * 60 + seconds;
-                        lyricsRows.push({ timeFormatted: `${minutes}:${seconds.toFixed(2)}`, time: time, text: text });
+                        lyricsRows.push({ time: time, text: text });
                     }
                 }
             }
@@ -81,11 +87,14 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
         // return [] as LyricsRow[];
     }
 
-    let lyricsEls = lyrics.map((line, idx) => {
-        return <div key={idx} className={classes.lyricLine}>
-            [{(line.timeFormatted)}] {line.text}
+    let lyricsEls = loading ? <div>Loading...</div> : lyrics.map((line, idx) => {
+        return <div key={idx} className={classes.lyricsLine + ' ' + (line.time <= playing.position ? classes.lyricsLineActive : '')}>
+            [{timeToHuman(line.time)}] {line.text}
         </div>
     });
+    if (!loading && lyrics.length == 0) {
+        lyricsEls = <div>No lyrics found.</div>
+    }
 
     return (
         <div className={classes.lyrics}>

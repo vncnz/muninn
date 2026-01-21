@@ -1,12 +1,8 @@
-import { SongInfo, SongPlaying } from "../types";
+import { SongPlaying } from "../types";
 import { artistsToString, timeToHuman, toPercent } from "../utils";
 import classes from "./Playing.module.scss";
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 
-type LyricsRow = {
-    time: number,
-    text: String
-}
 
 export function Playing({ playing }: {playing: SongPlaying}) {
     let artist = artistsToString(playing.metadata.artists)

@@ -19,9 +19,9 @@ function App() {
   useEffect(() => {
     // Subscribe once
     const unlisten = listen<string>("mpris-event", (event: any) => {
-      console.log('evt', event)
+      // console.log('evt', event)
       let evt = event.payload as SongPlaying
-      console.log('mpris', evt)
+      // console.log('mpris', evt)
       // let s = songBuilder(evt)
       // let songkey = stripDuration(evt)
       if (evt.metadata.key != song.metadata.key) {
@@ -59,16 +59,20 @@ function App() {
 
   return (
     <main className="container">
-      <h1>Current song</h1>
-      <Playing playing={song} />
-
-      <h1>Statistics</h1>
-      <div className="buttons">
-        <button onClick={() => { selectTab('song') }}>By song</button>
-        <button onClick={() => { selectTab('artist') }}>By artist</button>
-        <button onClick={() => { selectTab('lyrics') }}>Lyrics</button>
+      <div className={"playing-info"}>
+        <h1>Current song</h1>
+        <Playing playing={song} />
       </div>
-      {currentTab}
+
+      <div className="other">
+        <h1>Other</h1>
+        <div className="buttons">
+          <button onClick={() => { selectTab('song') }}>By song</button>
+          <button onClick={() => { selectTab('artist') }}>By artist</button>
+          <button onClick={() => { selectTab('lyrics') }}>Lyrics</button>
+        </div>
+        {currentTab}
+      </div>
     </main>
   );
 }
