@@ -3,7 +3,11 @@
 A Linux desktop companion that remembers what you listen to, with synced lyrics and MPRIS integration.
 
 ## TODO
-- Better mpris and track switchin/saving management
+- ~~Better mpris and track switchin/saving management~~
+- Add lyrics loading capability
+- Fix the layout
+- Limit number of results
+- Add the ability to reset a song or ignore it
 
 ## Recommended IDE Setup
 

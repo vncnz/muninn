@@ -18,7 +18,7 @@ export type ArtistStat = {
   listened_time: number
 }
 
-export type songPlaying = {
+export type SongPlaying = {
   metadata: SongInfo,
   position: number
 }
