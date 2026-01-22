@@ -24,9 +24,6 @@ function App() {
       // console.log('mpris', evt)
       // let s = songBuilder(evt)
       // let songkey = stripDuration(evt)
-      if (evt.metadata.key != song.metadata.key) {
-        downloadLyrics(evt.metadata)
-      }
       setSong(evt)
     });
 
@@ -37,12 +34,6 @@ function App() {
       unlisten.then((fn) => fn());
     };
   }, []); // empty dependency array -> run once
-
-  const downloadLyrics = (song: SongInfo) => {
-    // TODO: download lyrics
-    console.log(song)
-  }
-
   
   function selectTab(type: string) {
     setGroupType(type)
@@ -53,25 +44,21 @@ function App() {
     currentTab = <StatsSong />
   } else if (groupType == 'artist') {
     currentTab = <StatsArtist />
-  } else if (groupType == 'lyrics') {
-    currentTab = <Lyrics playing={song} />
   }
 
   return (
     <main className="container">
       <div className={"playing-info"}>
-        <h1>Current song</h1>
         <Playing playing={song} />
       </div>
 
-      <div className="other">
-        <h1>Other</h1>
-        <div className="buttons">
-          <button onClick={() => { selectTab('song') }}>By song</button>
-          <button onClick={() => { selectTab('artist') }}>By artist</button>
-          <button onClick={() => { selectTab('lyrics') }}>Lyrics</button>
-        </div>
+      <div className="stats-section">
+        <button onClick={() => { selectTab('song') }}>By song</button>
+        <button onClick={() => { selectTab('artist') }}>By artist</button>
         {currentTab}
+      </div>
+      <div className="lyrics-section">
+        <Lyrics playing={song} />
       </div>
     </main>
   );

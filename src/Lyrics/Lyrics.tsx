@@ -11,10 +11,12 @@ type LyricsResponse = {
     instrumental: boolean,
     name: string,
     // plainLyrics: "Lo sai che ti amo↵Ma a volte è difficile sai?↵Io mi perdo, mi strappo↵E arriviamo sempre allo stesso punto↵Sono le nove e fuori piove↵I…"
-    plainLyrics: LyricsRow[],
+    // plainLyrics: LyricsRow[],
     // syncedLyrics: "[00:05.76] Lo sai che ti amo↵[00:07.87] Ma a volte è difficile sai?↵[00:12.67] Io mi perdo, mi strappo↵[00:16.93] E arriviamo sempre all…"
-    syncedLyrics: LyricsRow[],
-    trackName: string
+    lyrics: LyricsRow[],
+    lyricsIsTimed: boolean,
+    trackName: string,
+    errorMessage: string|null
 }
 
 type LyricsRow = {
@@ -23,11 +25,29 @@ type LyricsRow = {
 }
 
 export function Lyrics({ playing }: { playing: SongPlaying }) {
-    const [lyrics, setLyrics] = useState([] as LyricsRow[])
+    const [lyricsData, setLyricsData] = useState(null as LyricsResponse | null)
     const [loading, setLoading] = useState(false)
     const [lastLoaded, setLastLoaded] = useState<String|null>(null)
+    const [lastSelectedRowIdx, setLastSelectedRowIdx] = useState(-1)
 
     useEffect(() => {
+
+        if (lyricsData && lyricsData.lyrics.length > 0 && lyricsData.lyricsIsTimed) {
+            let selectedRowIdx = lyricsData.lyrics.findIndex(line => line.time > playing.position);
+            if (selectedRowIdx !== lastSelectedRowIdx) {
+                setLastSelectedRowIdx(selectedRowIdx);
+                let lineEl = document.querySelector(`.line-${selectedRowIdx}`);
+                if (lineEl) {
+                    lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    console.log('Scrolled to line idx', selectedRowIdx)
+                } else {
+                    console.log('No lineEl found for idx', selectedRowIdx)
+                }
+            }
+        } else {
+            console.log('No lyrics or not timed')
+        }
+
         let cancelled = false;
 
         async function load() {
@@ -35,7 +55,7 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
             setLastLoaded(playing.metadata.title)
             fetchLyrics(playing).then(data => {
                 if (!data) setLastLoaded(null)
-                /* if (!cancelled) */ setLyrics(data?.syncedLyrics || []);
+                /* if (!cancelled) */ setLyricsData(data);
                 console.log('Fetched lyrics', data)
                 setLoading(false)
             }).catch(err => {
@@ -59,7 +79,7 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
             const data = await response.json();
             console.log('resp', data)
             let lyricsRows = [] as LyricsRow[];
-            let lyricsRowsPlain = [] as LyricsRow[];
+            let isPlain: boolean = false
             if (data.syncedLyrics) {
                 let lines = data.syncedLyrics.split("\n");
                 console.log('lines.length', lines.length)
@@ -73,26 +93,44 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
                         lyricsRows.push({ time: time, text: text });
                     }
                 }
-            }
-            if (data.plainLyrics) {
+            } else if (data.plainLyrics) {
+                isPlain = true
                 let lines = data.plainLyrics.split("\n");
                 for (let line of lines) {
-                    lyricsRowsPlain.push({ time: 0, text: line.trim() });
+                    lyricsRows.push({ time: 0, text: line.trim() });
                 }
             }
-            return {...data, syncedLyrics: lyricsRows, plainLyrics: lyricsRowsPlain} as LyricsResponse
+            return {...data, lyrics: lyricsRows, lyricsIsTimed: !isPlain} as LyricsResponse
             // return data as LyricsRow[];
+        } else {
+            const data = await response.json();
+            if (data.message) {
+                return { errorMessage: data.message, lyrics: [], lyricsIsTimed: false } as unknown as LyricsResponse
+            }
         }
         return null
         // return [] as LyricsRow[];
     }
 
-    let lyricsEls = loading ? <div>Loading...</div> : lyrics.map((line, idx) => {
-        return <div key={idx} className={classes.lyricsLine + ' ' + (line.time <= playing.position ? classes.lyricsLineActive : '')}>
-            [{timeToHuman(line.time)}] {line.text}
-        </div>
-    });
-    if (!loading && lyrics.length == 0) {
+    let lyricsEls = null
+    if (loading) {
+        lyricsEls = <div>Loading...</div>
+    } else if (lyricsData?.errorMessage) {
+        lyricsEls = <div>Error: {lyricsData.errorMessage}</div>
+    } else if (lyricsData?.lyricsIsTimed) {
+        lyricsEls = lyricsData?.lyrics.map((line, idx) => {
+            return <div key={idx} className={classes.lyricsLine + ' ' + (line.time <= playing.position ? classes.lyricsLineActive : '') + ` line-${idx}`}>
+                [{timeToHuman(line.time)}] {line.text}
+            </div>
+        })
+    } else {
+        lyricsEls = lyricsData?.lyrics.map((line, idx) => {
+            return <div key={idx} className={classes.lyricsLine}>
+                {line.text}
+            </div>
+        })
+    }
+    if (!loading && lyricsData?.lyrics.length == 0) {
         lyricsEls = <div>No lyrics found.</div>
     }
 
