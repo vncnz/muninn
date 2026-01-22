@@ -16,9 +16,9 @@ export function Playing({ playing }: {playing: SongPlaying}) {
         :
         <div>No playing</div>
 
-        let progress = <div className={classes.progressBar}>
-            <div style={{ width: `${progressRatio*100}%` }}></div>
-        </div>
+    let progress = <div className={classes.progressBar}>
+        <div style={{ width: `${progressRatio*100}%` }}></div>
+    </div>
 
     return (
         <div className={classes.playing}>

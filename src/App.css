@@ -43,7 +43,7 @@
     padding: 1em;
   }
 
-  & > .playing-info {
+  .playing-info {
     grid-area: playing;
     overflow: auto;
   }
