@@ -58,7 +58,10 @@ export function VisualTable<T extends object>({
         </div>
 
     const onHoverRow = (idx: number) => {
+        let up = idx < selectedRowIdx
         setSelectedRowIdx(idx)
+        let lineEl = document.querySelector(`.table-line-${ up ? idx-2 : idx+1}`);
+        lineEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     let tableRows = rows.map((row, index) => {
@@ -70,7 +73,7 @@ export function VisualTable<T extends object>({
                 key={id}
                 onMouseEnter={() => onHoverRow?.(index)}
                 onMouseLeave={() => onHoverRow?.(-1)}
-                className={index === selectedRowIdx ? classes.rowHovered : ''}
+                className={index === selectedRowIdx ? classes.rowHovered : '' + ' ' + `table-line-${index}`}
                 // onClick={() => onSelectRow?.(row)}
             >
                 {columns.map(col => {
@@ -94,16 +97,14 @@ export function VisualTable<T extends object>({
         <div className={classes.visualTable}>
             {stack}
             <table>
-                <thead>
+                <tbody>
                     <tr>
                         {columns.map(col => (
-                            <th key={String(col.key)} style={{ textAlign: col.align }}>
+                            <td key={String(col.key)} style={{ textAlign: col.align }} className={classes.th}>
                             {col.label}
-                            </th>
+                            </td>
                         ))}
                     </tr>
-                </thead>
-                <tbody>
                     {tableRows}
                 </tbody>
             </table>

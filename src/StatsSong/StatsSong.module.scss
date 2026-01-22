@@ -1,2 +1,6 @@
 
-.songStats {}
+.songStats {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}

@@ -20,13 +20,13 @@ export function Playing({ playing }: {playing: SongPlaying}) {
         <div style={{ width: `${progressRatio*100}%` }}></div>
     </div>
 
-    return (
-        <div className={classes.playing}>
+    let el = playing.metadata.title ? <div className={classes.playing}>
             {songEl}
             <div className={classes.progressContainer}>
                 {progress}
                 { playing.metadata.length > 0 && <div>Time: {timeToHuman(playing.position)} / {timeToHuman(playing.metadata.length)} ({toPercent(progressRatio)})</div> }
             </div>
-        </div>
-    )
+        </div> : <div className={classes.playing}>No playing</div>
+
+    return el
 }

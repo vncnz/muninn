@@ -51,6 +51,11 @@
   .stats-section {
     grid-area: stats;
     overflow: auto;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    gap: 5px;
   }
   .lyrics-section {
     grid-area: lyrics;
