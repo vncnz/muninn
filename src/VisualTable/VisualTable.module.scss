@@ -82,3 +82,17 @@
         }
     }
 }
+
+.progressBar {
+    width: 3rem;
+    height: 5px;
+    background-color: #57737a;
+    border-radius: 5px;
+    overflow: hidden;
+
+    & > div {
+        height: 100%;
+        width: 50%;
+        background-color: #c2fcf7;
+    }
+}

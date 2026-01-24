@@ -34,6 +34,7 @@ export function VisualTable<T extends object>({
     // console.log(data)
 
     let full = rows.reduce((acc: number, v: any) => acc + v[visualkey], 0)
+    let max = rows.reduce((acc: number, v: any) => Math.max(acc, v[visualkey]), 0)
     let cumulate = 0
     /* let colors = ["rgb(200, 0, 0)", "rgb(0, 200, 0)", "rgb(0, 0, 200)", 
                   "rgb(200, 0, 200)", "rgb(200, 200, 0)", "rgb(0, 200, 200)",
@@ -85,6 +86,11 @@ export function VisualTable<T extends object>({
                 className={index === selectedRowIdx ? classes.rowHovered : '' + ` table-line-${index}` + ` row-id-${row[unique]}`}
                 // onClick={() => onSelectRow?.(row)}
             >
+                <td>
+                    <div className={classes.progressBar}>
+                        <div style={{ width: `${((row[visualkey]  as number)/ max)*100}%` }}></div>
+                    </div>
+                </td>
                 {columns.map(col => {
                 const value = row[col.key];
                 return (
