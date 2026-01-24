@@ -5,11 +5,13 @@ use std::collections::HashMap;
 
 use crate::mpris_manager::{Artist, ArtistStats, Song};
 
+use chrono;
+
 pub struct StatsStore {
     conn: rusqlite::Connection,
 }
 
-const CURRENT_DB_VERSION: i32 = 6;
+const CURRENT_DB_VERSION: i32 = 7;
 impl StatsStore {
     pub fn new(app_dir: &Path) -> rusqlite::Result<Self> {
         // let conn = Connection::open_in_memory()?;
@@ -58,7 +60,7 @@ impl StatsStore {
                     title TEXT NOT NULL,
                     album TEXT NOT NULL,
                     length INTEGER NOT NULL,
-                    listened_time REAL NOT NULL DEFAULT 0
+                    -- listened_time REAL NOT NULL DEFAULT 0
                 );
 
                 CREATE TABLE artists (
@@ -70,6 +72,14 @@ impl StatsStore {
                     song_id INTEGER NOT NULL,
                     artist_id INTEGER NOT NULL,
                     UNIQUE(song_id, artist_id)
+                );
+
+                CREATE TABLE listening_days (
+                    song_id INTEGER NOT NULL,
+                    day DATE NOT NULL, -- YYYY-MM-DD
+                    seconds INTEGER NOT NULL,
+                    PRIMARY KEY (song_id, day),
+                    FOREIGN KEY (song_id) REFERENCES songs(id)
                 );
                 
                 CREATE INDEX idx_artists_name ON artists(name);
@@ -97,7 +107,7 @@ impl StatsStore {
                 s.title,
                 s.album,
                 s.length,
-                s.listened_time,
+                -- s.listened_time,
                 a.id,
                 a.name
             FROM songs s
@@ -124,13 +134,13 @@ impl StatsStore {
                     title: row.get(2)?,
                     album: row.get(3)?,
                     length: row.get(4)?,
-                    listened_time: row.get(5)?,
+                    listened_time: 0.0,
                     artists: None,
                 });
             }
 
-            let artist_id: Option<i32> = row.get(6)?;
-            let artist_name: Option<String> = row.get(7)?;
+            let artist_id: Option<i32> = row.get(5)?;
+            let artist_name: Option<String> = row.get(6)?;
 
             if let (Some(id), Some(name)) = (artist_id, artist_name) {
                 artists.push(Artist {
@@ -235,11 +245,12 @@ impl StatsStore {
 
         tx.execute(
             r#"
-            UPDATE songs
-            SET listened_time = listened_time + ?
-            WHERE id = ?;
+                INSERT INTO listening_days (song_id, day, seconds)
+                VALUES (?, ?, ?)
+                ON CONFLICT(song_id, day)
+                DO UPDATE SET seconds = seconds + excluded.seconds;
             "#,
-            params![ time, songid ],
+            params![ songid, chrono::Utc::now().format("%Y-%m-%d").to_string(), time ],
         )?;
         tx.commit()?;
         Ok(())
@@ -254,13 +265,19 @@ impl StatsStore {
                 s.title,
                 s.album,
                 s.length,
-                s.listened_time,
+                d.listened_time,
                 a.id,
                 a.name
-            FROM songs s
+            FROM (
+                SELECT song_id, SUM(seconds) AS listened_time
+                FROM listening_days
+                -- WHERE day >= date('now', '-6 days', 'localtime');
+                GROUP BY song_id
+            ) d
+            LEFT JOIN songs s ON d.song_id = s.id
             LEFT JOIN song_artists sa ON sa.song_id = s.id
             LEFT JOIN artists a ON a.id = sa.artist_id
-            ORDER BY s.listened_time DESC, a.name ASC
+            ORDER BY d.listened_time DESC, a.name ASC
             "#
         )?;
 
@@ -311,10 +328,16 @@ impl StatsStore {
             SELECT
                 a.id,
                 a.name,
-                SUM(s.listened_time) AS total_listened_time
-            FROM artists a
-            JOIN song_artists sa ON sa.artist_id = a.id
-            JOIN songs s         ON s.id = sa.song_id
+                SUM(d.listened_time) AS total_listened_time
+            FROM (
+                SELECT song_id, SUM(seconds) AS listened_time
+                FROM listening_days
+                -- WHERE day >= date('now', '-6 days', 'localtime');
+                GROUP BY song_id
+            ) d
+            JOIN songs s         ON s.id = d.song_id
+            JOIN song_artists sa ON sa.song_id = s.id
+            JOIN artists a       ON a.id = sa.artist_id
             GROUP BY a.id, a.name
             ORDER BY total_listened_time DESC
         ").expect("prepare ko");
