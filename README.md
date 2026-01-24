@@ -23,6 +23,9 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 ## TODO
 - ~~Better mpris and track switchin/saving management~~
 - ~~Add lyrics loading capability~~
+- Change stats UI, compressing data in a narrow column
+- Add time ranges (today, 7d, 30d, all)
+- Add comparisons between different time ranges stats
 - Limit number of results shown in stats
 - Add the ability to reset a song counter or ignore a song/artist
 - Add the ability to merge one song listening time into another
