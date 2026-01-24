@@ -1,4 +1,5 @@
 export type SongInfo = {
+  id?: number,
   key: string,
   title: String,
   artists: Artist[],
@@ -29,6 +30,7 @@ export type songStat = {
 }
 
 export type songStatTable = {
+  id: number,
   title: String,
   artists: Artist[],
   album: String,

@@ -15,6 +15,11 @@
   -webkit-text-size-adjust: 100%;
 
   --table-row-hover-bg: coral;
+  --accent-1: #57737a;
+  --accent-2: #85bdbf;
+  --accent-3: #c2fcf7;
+  --accent-4: #d9fdff;
+  --accent-5: #e9feff;
 }
 
 * {
@@ -26,10 +31,10 @@
 .container {
   margin: 0;
   display: grid;
-  grid-template-areas: 'stats lyrics'
-                       'playing playing';
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr max-content;
+  grid-template-areas: 'stats playing'
+                       'stats lyrics';
+  grid-template-columns: 1fr max-content;
+  grid-template-rows: max-content 1fr;
   gap: 2em;
   height: 100vh;
   width: 100vw;

@@ -41,7 +41,7 @@ function App() {
 
   let currentTab = null
   if (groupType == 'song') {
-    currentTab = <StatsSong />
+    currentTab = <StatsSong playingId={song.metadata.id}/>
   } else if (groupType == 'artist') {
     currentTab = <StatsArtist />
   }

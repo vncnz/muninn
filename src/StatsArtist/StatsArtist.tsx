@@ -28,6 +28,7 @@ export function StatsArtist () {
         ] as Column<ArtistStat>[]
 
     let table = <VisualTable<ArtistStat>
+          unique="id"
           visualkey="listened_time"
           columns={columns}
           rows={artistStats}

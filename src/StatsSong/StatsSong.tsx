@@ -6,8 +6,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { Column, VisualTable } from "../VisualTable/VisualTable";
 
 
-export function StatsSong() {
+export function StatsSong({ playingId }: { playingId?: number }) {
     const [songStats, setSongStats] = useState([] as SongInfo[]);
+    // const [playingIdState, setPlayingIdState] = useState(playingId);
 
     const load = async () => {
         // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -16,10 +17,18 @@ export function StatsSong() {
         setSongStats(s)
     }
 
+    const scrollToPlaying = () => {
+        if (playingId === undefined) return;
+        let rowEl = document.querySelector(`.row-id-${playingId}`);
+        rowEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     useEffect(() => { load(); }, []);
+    // useEffect(() => { setPlayingIdState(playingId); }, [playingId]);
 
     let stats2 = songStats.map((song: SongInfo) => {
         return {
+            id: song.id,
             title: song.title,
             artists: song.artists,
             album: song.album,
@@ -44,6 +53,7 @@ export function StatsSong() {
     ] as Column<songStatTable>[]
 
     let table = <VisualTable<songStatTable>
+        unique='id'
         visualkey="listened_time"
         columns={columns}
         rows={stats2}
@@ -51,7 +61,7 @@ export function StatsSong() {
 
     return (
         <div className={classes.songStats}>
-            <div><a onClick={load}>&#8635; Refresh Song Stats</a></div>
+            <div className={classes.controls}><a onClick={load}>&#8635; Refresh Song Stats</a><a onClick={scrollToPlaying}>&#9658; Scroll to Playing</a></div>
             {table}
         </div>
     )

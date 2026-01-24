@@ -25,7 +25,7 @@
 
         .th {
             position: sticky;
-            top: 5px;
+            top: 0px;
             background-color: var(--background-color);
             z-index: 1;
         }
@@ -33,11 +33,11 @@
             border: 1px solid transparent;
         }
 
-        thead tr th:nth-child(1) {
+        /* thead tr th:nth-child(1) {
             width: 1%;
             // display: grid;
             // grid-template-columns: auto 1fr 1fr 1fr;
-        }
+        } */
 
         tr {
             &.rowHovered {

@@ -11,6 +11,7 @@ export type Column<T> = {
 };
 
 type VisualTableProps<T> = {
+  unique: keyof T;
   visualkey: keyof T;
   columns: Column<T>[];
   rows: T[];
@@ -21,6 +22,7 @@ type VisualTableProps<T> = {
 
 
 export function VisualTable<T extends object>({
+    unique,
     visualkey,
     columns,
     rows,
@@ -49,6 +51,7 @@ export function VisualTable<T extends object>({
             
                 onMouseEnter={() => onHoverRow?.(idx)}
                 onMouseLeave={() => onHoverRow?.(-1)}
+                onClick={() => onClickRow(idx)}
             >
         </div>
     })
@@ -58,10 +61,16 @@ export function VisualTable<T extends object>({
         </div>
 
     const onHoverRow = (idx: number) => {
-        let up = idx < selectedRowIdx
+        // let up = idx < selectedRowIdx
         setSelectedRowIdx(idx)
-        let lineEl = document.querySelector(`.table-line-${ up ? idx-2 : idx+1}`);
-        lineEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // let lineEl = document.querySelector(`.table-line-${ up ? idx-2 : idx+1}`);
+        // lineEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    const onClickRow = (idx: number) => {
+        // let up = idx < selectedRowIdx
+        // setSelectedRowIdx(idx)
+        let lineEl = document.querySelector(`.table-line-${idx+1}`);
+        lineEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     let tableRows = rows.map((row, index) => {
@@ -73,7 +82,7 @@ export function VisualTable<T extends object>({
                 key={id}
                 onMouseEnter={() => onHoverRow?.(index)}
                 onMouseLeave={() => onHoverRow?.(-1)}
-                className={index === selectedRowIdx ? classes.rowHovered : '' + ' ' + `table-line-${index}`}
+                className={index === selectedRowIdx ? classes.rowHovered : '' + ` table-line-${index}` + ` row-id-${row[unique]}`}
                 // onClick={() => onSelectRow?.(row)}
             >
                 {columns.map(col => {
