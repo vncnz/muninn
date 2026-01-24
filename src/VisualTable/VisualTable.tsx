@@ -36,9 +36,6 @@ export function VisualTable<T extends object>({
     let full = rows.reduce((acc: number, v: any) => acc + v[visualkey], 0)
     let max = rows.reduce((acc: number, v: any) => Math.max(acc, v[visualkey]), 0)
     let cumulate = 0
-    /* let colors = ["rgb(200, 0, 0)", "rgb(0, 200, 0)", "rgb(0, 0, 200)", 
-                  "rgb(200, 0, 200)", "rgb(200, 200, 0)", "rgb(0, 200, 200)",
-                  "rgb(100, 100, 100)", "rgb(100, 200, 100)"] */
     let colors = ['#57737a', '#85bdbf', '#c2fcf7', '#d9fdff', '#e9feff']
     
     let rectangles = rows.map((el: any, idx: number) => {
@@ -114,6 +111,7 @@ export function VisualTable<T extends object>({
             <table>
                 <tbody>
                     <tr>
+                        <td></td>
                         {columns.map(col => (
                             <td key={String(col.key)} style={{ textAlign: col.align }} className={classes.th}>
                             {col.label}
