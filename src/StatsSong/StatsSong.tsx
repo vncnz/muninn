@@ -7,12 +7,14 @@ import { Column, VisualTable } from "../VisualTable/VisualTable";
 
 
 export function StatsSong({ playingId }: { playingId?: number }) {
+    const forever = -1000000
     const [songStats, setSongStats] = useState([] as SongInfo[]);
+    const [periodForStats, setPeriodForStats] = useState(forever);
     // const [playingIdState, setPlayingIdState] = useState(playingId);
 
     const load = async () => {
         // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-        let s = await invoke("get_stats_all", {}) as SongInfo[]
+        let s = await invoke("get_stats_all", { from: periodForStats }) as SongInfo[]
         console.log('song stats', s)
         setSongStats(s)
     }
@@ -23,7 +25,7 @@ export function StatsSong({ playingId }: { playingId?: number }) {
         rowEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [periodForStats]);
     // useEffect(() => { setPlayingIdState(playingId); }, [playingId]);
 
     let stats2 = songStats.map((song: SongInfo) => {

@@ -20,9 +20,9 @@ fn get_stats(state: tauri::State<'_, SharedStats>) -> Result<HashMap<String, Son
 }
 
 #[tauri::command]
-fn get_stats_all(store: tauri::State<'_, SharedStore>) -> Result<Vec<Song>, String> {
+fn get_stats_all(store: tauri::State<'_, SharedStore>, from: i32) -> Result<Vec<Song>, String> {
     let store = store.lock().expect("StatsStore poisoned");
-    Ok(store.get_top_songs().expect("Impossible to get songs"))
+    Ok(store.get_top_songs(from).expect("Impossible to get songs"))
 }
 
 #[tauri::command]

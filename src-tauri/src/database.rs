@@ -256,8 +256,7 @@ impl StatsStore {
         Ok(())
     }
 
-    pub fn get_top_songs(&self) -> Result<Vec<Song>> {
-        let from = -100000;
+    pub fn get_top_songs(&self, from: i32) -> Result<Vec<Song>> {
         let to = 0;
 
         let mut stmt = self.conn.prepare(
@@ -326,7 +325,7 @@ impl StatsStore {
 
 
     pub fn get_top_artists(&self) -> Vec<ArtistStats> {
-        let from = -100000;
+        let from = -10000;
         let to = 0;
 
         let mut results = Vec::new();
