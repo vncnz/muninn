@@ -1,0 +1,35 @@
+
+.songstatrow {
+    position: relative;
+    // border-left: 2px solid var(--accent-1);
+    padding-left: 12px;
+    .time {
+        display: flex;
+        flex-direction: row;
+        gap: 5px;
+        align-items: center;
+    }
+    .title {}
+    .artist {}
+    .album {}
+    .listened {}
+}
+
+.progressBar {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    bottom: 5px;
+    width: 5px;
+    background-color: #57737a;
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    & > div {
+        width: 100%;
+        background-color: #c2fcf7;
+    }
+}

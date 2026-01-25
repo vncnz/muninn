@@ -4,6 +4,7 @@ import classes from "./StatsSong.module.scss";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Column, VisualTable } from "../VisualTable/VisualTable";
+import { StatsSongRow } from "../StatsSongRow/StatsSongRow";
 
 
 export function StatsSong({ playingId }: { playingId?: number }) {
@@ -40,6 +41,7 @@ export function StatsSong({ playingId }: { playingId?: number }) {
             ratio: song.length > 0 ? song.listened_time / song.length : 0
         } as songStatTable
     })
+    /*
     let columns = [
 {
             key: "listened_time",
@@ -63,8 +65,43 @@ export function StatsSong({ playingId }: { playingId?: number }) {
 
     return (
         <div className={classes.songStats}>
-            <div className={classes.controls}><a onClick={load}>&#8635; Refresh Song Stats</a><a onClick={scrollToPlaying}>&#9658; Scroll to Playing</a></div>
+            <StatsSongRow song={stats2[0]} max={max} />
+            <div className={classes.controls}>
+                <a onClick={load}>&#8635; Refresh Song Stats</a>
+                <a onClick={scrollToPlaying}>&#9658; Scroll to Playing</a>
+                <span>
+                    <a onClick={() => setPeriodForStats(0)}>{periodForStats === 0 ? '◼' : '◻'}&nbsp;Today</a>
+                    <a onClick={() => setPeriodForStats(-6)}>{periodForStats === -6 ? '◼' : '◻'}&nbsp;Last 7d</a>
+                    <a onClick={() => setPeriodForStats(-30)}>{periodForStats === -30 ? '◼' : '◻'}&nbsp;Last 30d</a>
+                    <a onClick={() => setPeriodForStats(forever)}>{periodForStats === forever ? '◼' : '◻'}&nbsp;Forever</a>
+                </span>
+            </div>
             {table}
+        </div>
+    ) */
+
+    let full = stats2.reduce((acc: number, v: any) => acc + v.listened_time, 0)
+    let max = stats2.reduce((acc: number, v: any) => Math.max(acc, v.listened_time), 0)
+
+    let lst = stats2.map((song, idx) => {
+        return <StatsSongRow song={song} max={max} key={idx} />
+    })
+
+    return (
+        <div className={classes.songStats}>
+            <div className={classes.controls}>
+                <a onClick={load}>&#8635; Refresh Song Stats</a>
+                <a onClick={scrollToPlaying}>&#9658; Scroll to Playing</a>
+                <span>
+                    <a onClick={() => setPeriodForStats(0)}>{periodForStats === 0 ? '◼' : '◻'}&nbsp;Today</a>
+                    <a onClick={() => setPeriodForStats(-6)}>{periodForStats === -6 ? '◼' : '◻'}&nbsp;Last 7d</a>
+                    <a onClick={() => setPeriodForStats(-30)}>{periodForStats === -30 ? '◼' : '◻'}&nbsp;Last 30d</a>
+                    <a onClick={() => setPeriodForStats(forever)}>{periodForStats === forever ? '◼' : '◻'}&nbsp;Forever</a>
+                </span>
+            </div>
+            <div className={classes.lst}>
+                {lst}
+            </div>
         </div>
     )
 }

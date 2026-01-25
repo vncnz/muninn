@@ -18,5 +18,18 @@
                 color: var(--accent-4);
             }
         }
+
+        span {
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+        }
+    }
+
+    .lst {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: auto;
     }
 }
