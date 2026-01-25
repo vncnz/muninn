@@ -3,9 +3,9 @@
 
 .playing {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 1em;
 }
 
