@@ -257,8 +257,11 @@ impl StatsStore {
     }
 
     pub fn get_top_songs(&self) -> Result<Vec<Song>> {
+        let from = -100000;
+        let to = 0;
+
         let mut stmt = self.conn.prepare(
-            r#"
+            &format!("
             SELECT
                 s.id,
                 s.hash,
@@ -271,14 +274,14 @@ impl StatsStore {
             FROM (
                 SELECT song_id, SUM(seconds) AS listened_time
                 FROM listening_days
-                -- WHERE day >= date('now', '-6 days', 'localtime');
+                WHERE day >= date('now', '{from} days', 'localtime') and day <= date('now', '{to} days', 'localtime')
                 GROUP BY song_id
             ) d
             LEFT JOIN songs s ON d.song_id = s.id
             LEFT JOIN song_artists sa ON sa.song_id = s.id
             LEFT JOIN artists a ON a.id = sa.artist_id
             ORDER BY d.listened_time DESC, a.name ASC
-            "#
+            ")
         )?;
 
         let mut rows = stmt.query([])?;
@@ -323,8 +326,11 @@ impl StatsStore {
 
 
     pub fn get_top_artists(&self) -> Vec<ArtistStats> {
+        let from = -100000;
+        let to = 0;
+
         let mut results = Vec::new();
-        let mut stmt = self.conn.prepare("
+        let mut stmt = self.conn.prepare(&format!("
             SELECT
                 a.id,
                 a.name,
@@ -332,7 +338,7 @@ impl StatsStore {
             FROM (
                 SELECT song_id, SUM(seconds) AS listened_time
                 FROM listening_days
-                -- WHERE day >= date('now', '-6 days', 'localtime');
+                WHERE day >= date('now', '{from} days', 'localtime') and day <= date('now', '{to} days', 'localtime')
                 GROUP BY song_id
             ) d
             JOIN songs s         ON s.id = d.song_id
@@ -340,7 +346,7 @@ impl StatsStore {
             JOIN artists a       ON a.id = sa.artist_id
             GROUP BY a.id, a.name
             ORDER BY total_listened_time DESC
-        ").expect("prepare ko");
+        ")).expect("prepare ko");
         let songs = stmt.query_map([], |row| {
             Ok(ArtistStats {
                 id: Some(row.get(0).expect("Artist id in query")),
