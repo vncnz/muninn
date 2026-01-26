@@ -59,8 +59,7 @@ impl StatsStore {
                     hash TEXT UNIQUE NOT NULL,
                     title TEXT NOT NULL,
                     album TEXT NOT NULL,
-                    length INTEGER NOT NULL,
-                    -- listened_time REAL NOT NULL DEFAULT 0
+                    length INTEGER NOT NULL
                 );
 
                 CREATE TABLE artists (
@@ -76,7 +75,7 @@ impl StatsStore {
 
                 CREATE TABLE listening_days (
                     song_id INTEGER NOT NULL,
-                    day DATE NOT NULL, -- YYYY-MM-DD
+                    day DATE NOT NULL,
                     seconds INTEGER NOT NULL,
                     PRIMARY KEY (song_id, day),
                     FOREIGN KEY (song_id) REFERENCES songs(id)
