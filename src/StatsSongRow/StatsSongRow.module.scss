@@ -10,8 +10,13 @@
         align-items: center;
     }
     .title {}
-    .artist {}
-    .album {}
+    // .artist {}
+    // .album {}
+    .artist_album {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     .listened {}
 }
 

@@ -1,9 +1,9 @@
 import { SongInfo, songStatTable } from "../types";
-import { artistsToString, timeConversion } from "../utils";
+// import { artistsToString, timeConversion } from "../utils";
 import classes from "./StatsSong.module.scss";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Column, VisualTable } from "../VisualTable/VisualTable";
+// import { Column, VisualTable } from "../VisualTable/VisualTable";
 import { StatsSongRow } from "../StatsSongRow/StatsSongRow";
 
 
@@ -90,8 +90,10 @@ export function StatsSong({ playingId }: { playingId?: number }) {
     return (
         <div className={classes.songStats}>
             <div className={classes.controls}>
-                <a onClick={load}>&#8635; Refresh Song Stats</a>
-                <a onClick={scrollToPlaying}>&#9658; Scroll to Playing</a>
+                <span>
+                    <a onClick={load}>&#8635; Refresh Song Stats</a>
+                    <a onClick={scrollToPlaying}>&#9658; Scroll to Playing</a>
+                </span>
                 <span>
                     <a onClick={() => setPeriodForStats(0)}>{periodForStats === 0 ? '◼' : '◻'}&nbsp;Today</a>
                     <a onClick={() => setPeriodForStats(-6)}>{periodForStats === -6 ? '◼' : '◻'}&nbsp;Last 7d</a>

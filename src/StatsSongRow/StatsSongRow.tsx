@@ -32,7 +32,7 @@ export function StatsSongRow({ song, max }: { song: songStatTable, max: number }
                 <div className={classes.listened}>{timeConversion(song.listened_time)} / {timeConversion(song.length)}</div>
             </div>
             <div className={classes.title}>{song.title}</div>
-            <div className={classes.artist}>{artistsToString(song.artists)} / {song.album}</div>
+            <div className={classes.artist_album}>{artistsToString(song.artists)} / {song.album}</div>
         </div>
     )
 }

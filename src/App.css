@@ -33,7 +33,7 @@
   display: grid;
   grid-template-areas: 'stats playing'
                        'stats lyrics';
-  grid-template-columns: 1fr max-content;
+  grid-template-columns: minmax(10rem, max-content) minmax(1fr, max-content);
   grid-template-rows: max-content 1fr;
   gap: 2em;
   height: 100vh;
