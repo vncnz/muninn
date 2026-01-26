@@ -323,8 +323,7 @@ impl StatsStore {
     }
 
 
-    pub fn get_top_artists(&self) -> Vec<ArtistStats> {
-        let from = -10000;
+    pub fn get_top_artists(&self, from: i32) -> Vec<ArtistStats> {
         let to = 0;
 
         let mut results = Vec::new();

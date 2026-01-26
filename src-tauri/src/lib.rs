@@ -26,9 +26,9 @@ fn get_stats_all(store: tauri::State<'_, SharedStore>, from: i32) -> Result<Vec<
 }
 
 #[tauri::command]
-fn get_top_artists(store: tauri::State<'_, SharedStore>) -> Result<Vec<ArtistStats>, String> {
+fn get_top_artists(store: tauri::State<'_, SharedStore>, from: i32) -> Result<Vec<ArtistStats>, String> {
     let store = store.lock().expect("StatsStore poisoned");
-    Ok(store.get_top_artists())
+    Ok(store.get_top_artists(from))
 }
 
 

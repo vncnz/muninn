@@ -7,15 +7,17 @@ import { Column, VisualTable } from "../VisualTable/VisualTable";
 
 
 export function StatsArtist () {
+    const forever = -1000000
     const [artistStats, setArtistStats] = useState([] as ArtistStat[]);
+    const [periodForStats, setPeriodForStats] = useState(forever);
 
     const load = async () => {
-        let s = await invoke("get_top_artists", {}) as ArtistStat[]
+        let s = await invoke("get_top_artists", { from: periodForStats }) as ArtistStat[]
         console.log('artist stats', s)
         setArtistStats(s)
     }
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => { load(); }, [periodForStats]);
 
     let columns = [
           {
@@ -36,7 +38,17 @@ export function StatsArtist () {
 
     return (
         <div className={classes.artistStats}>
-            <div><a onClick={load}>&#8635; Refresh Artist Stats</a></div>
+            <div className={classes.controls}>
+                <span>
+                    <a onClick={load}>&#8635; Refresh Artist Stats</a>
+                </span>
+                <span>
+                    <a onClick={() => setPeriodForStats(0)}>{periodForStats === 0 ? '◼' : '◻'}&nbsp;Today</a>
+                    <a onClick={() => setPeriodForStats(-6)}>{periodForStats === -6 ? '◼' : '◻'}&nbsp;Last 7d</a>
+                    <a onClick={() => setPeriodForStats(-30)}>{periodForStats === -30 ? '◼' : '◻'}&nbsp;Last 30d</a>
+                    <a onClick={() => setPeriodForStats(forever)}>{periodForStats === forever ? '◼' : '◻'}&nbsp;Forever</a>
+                </span>
+            </div>
             {table}
         </div>
     )
