@@ -14,12 +14,16 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 
-  --table-row-hover-bg: coral;
+  --table-row-hover-bg: #ecc30b;
   --accent-1: #57737a;
   --accent-2: #85bdbf;
   --accent-3: #c2fcf7;
   --accent-4: #d9fdff;
   --accent-5: #e9feff;
+
+  --primary: #ECC30B; /* bright amber */
+  --secondary: #FF6F61; /* bright coral: maybe too bright? */
+  --tertiary: #7FAEB5; /* teal/gray */
 }
 
 * {
@@ -109,8 +113,16 @@ button {
   outline: none;
 }
 
-#greet-input {
-  margin-right: 5px;
+.stats-type-selector {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+.stats-type-selector a {
+  color: var(--tertiary);
+}
+.stats-type-selector a.active {
+  color: var(--secondary);
 }
 
 @media (prefers-color-scheme: dark) {

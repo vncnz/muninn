@@ -13,9 +13,24 @@
         a {
             cursor: pointer;
             color: var(--accent-3);
-            text-decoration: underline;
+            
             &:hover {
-                color: var(--accent-4);
+                text-decoration: underline;
+                // color: var(--accent-4);
+            }
+        }
+        .trSelector {
+            opacity: .5;
+            &::before {
+                margin-right: .1em;
+                content: '◻';
+            }
+        }
+        .trActive {
+            color: var(--secondary);
+            opacity: 1;
+            &::before {
+                content: '◼';
             }
         }
 

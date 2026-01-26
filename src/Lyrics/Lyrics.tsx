@@ -118,8 +118,12 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
     } else if (lyricsData?.errorMessage) {
         lyricsEls = <div>Error: {lyricsData.errorMessage}</div>
     } else if (lyricsData?.lyricsIsTimed) {
+        let lastActive = lyricsData?.lyrics.reduce((acc, line, idx) => {
+            if (line.time <= playing.position) return idx
+            return acc
+        }, 0)
         lyricsEls = lyricsData?.lyrics.map((line, idx) => {
-            return <div key={idx} className={classes.lyricsLine + ' ' + (line.time <= playing.position ? classes.lyricsLineActive : '') + ` line-${idx}`}>
+            return <div key={idx} className={classes.lyricsLine + ' ' + (line.time <= playing.position ? classes.lyricsLineOld : '') + ' ' + (idx === lastActive ? classes.lyricsLineActive : '') + ` line-${idx}`}>
                 [{timeToHuman(line.time)}] {line.text}
             </div>
         })

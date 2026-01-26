@@ -12,14 +12,14 @@
 .progressBar {
     width: 20rem;
     height: 5px;
-    background-color: #57737a;
+    background-color: rgba(128, 128, 128, 0.5);
     border-radius: 5px;
     overflow: hidden;
 
     & > div {
         height: 100%;
         width: 50%;
-        background-color: #c2fcf7;
+        background-color: var(--primary);
     }
 }
 
@@ -27,4 +27,5 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    color: var(--tertiary);
 }

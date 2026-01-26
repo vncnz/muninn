@@ -53,8 +53,10 @@ function App() {
       </div>
 
       <div className="stats-section">
-        <button onClick={() => { selectTab('song') }}>By song</button>
-        <button onClick={() => { selectTab('artist') }}>By artist</button>
+        <div className="stats-type-selector">
+          <a onClick={() => { selectTab('song') }} className={groupType === 'song' ? 'active' : ''}>By song</a>
+          <a onClick={() => { selectTab('artist') }} className={groupType === 'artist' ? 'active' : ''}>By artist</a>
+        </div>
         {currentTab}
       </div>
       <div className="lyrics-section">

@@ -95,10 +95,10 @@ export function StatsSong({ playingId }: { playingId?: number }) {
                     <a onClick={scrollToPlaying}>&#9658; Scroll to Playing</a>
                 </span>
                 <span>
-                    <a onClick={() => setPeriodForStats(0)}>{periodForStats === 0 ? '◼' : '◻'}&nbsp;Today</a>
-                    <a onClick={() => setPeriodForStats(-6)}>{periodForStats === -6 ? '◼' : '◻'}&nbsp;Last 7d</a>
-                    <a onClick={() => setPeriodForStats(-30)}>{periodForStats === -30 ? '◼' : '◻'}&nbsp;Last 30d</a>
-                    <a onClick={() => setPeriodForStats(forever)}>{periodForStats === forever ? '◼' : '◻'}&nbsp;Forever</a>
+                    <a onClick={() => setPeriodForStats(0)} className={classes.trSelector + (periodForStats === 0 ? (' '+classes.trActive) : '')}>Today</a>
+                    <a onClick={() => setPeriodForStats(-6)} className={classes.trSelector + (periodForStats === -6 ? (' '+classes.trActive) : '')}>Last 7d</a>
+                    <a onClick={() => setPeriodForStats(-30)} className={classes.trSelector + (periodForStats === -30 ? (' '+classes.trActive) : '')}>Last 30d</a>
+                    <a onClick={() => setPeriodForStats(forever)} className={classes.trSelector + (periodForStats === forever ? (' '+classes.trActive) : '')}>Forever</a>
                 </span>
             </div>
             <div className={classes.lst}>

@@ -9,13 +9,23 @@
         gap: 5px;
         align-items: center;
     }
-    .title {}
-    // .artist {}
-    // .album {}
+    .title {
+        font-weight: 600;
+    }
+    .artist {
+        opacity: 1;
+    }
+    .album {
+        opacity: .7;
+    }
     .artist_album {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        // color: var(--tertiary);
+    }
+    .duration {
+        color: var(--tertiary);
     }
     .listened {}
 }
@@ -26,7 +36,8 @@
     top: 5px;
     bottom: 5px;
     width: 5px;
-    background-color: #57737a;
+    border: 1px solid var(--tertiary);
+    background-color: black;
     border-radius: 3px;
     overflow: hidden;
     display: flex;
@@ -35,6 +46,6 @@
 
     & > div {
         width: 100%;
-        background-color: #c2fcf7;
+        background-color: var(--tertiary);
     }
 }

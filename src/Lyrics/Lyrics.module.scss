@@ -1,10 +1,16 @@
 
 .lyricsLine {
-    line-height: 1;
-    padding: .75em 0;
+    line-height: 1.5;
+    padding: .5em 0;
+    opacity: .8;
+}
+
+.lyricsLineOld {
+    color: var(--tertiary);
+    font-weight: bold;
+    opacity: 1;
 }
 
 .lyricsLineActive {
-    color: #85bdbf;
-    font-weight: bold;
+    color: var(--primary);
 }
