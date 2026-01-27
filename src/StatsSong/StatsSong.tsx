@@ -80,7 +80,7 @@ export function StatsSong({ playingId }: { playingId?: number }) {
         </div>
     ) */
 
-    let full = stats2.reduce((acc: number, v: any) => acc + v.listened_time, 0)
+    // let full = stats2.reduce((acc: number, v: any) => acc + v.listened_time, 0)
     let max = stats2.reduce((acc: number, v: any) => Math.max(acc, v.listened_time), 0)
 
     let lst = stats2.map((song, idx) => {

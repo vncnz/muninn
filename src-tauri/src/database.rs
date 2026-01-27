@@ -3,7 +3,7 @@ use std::path::Path;
 use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
 
-use crate::mpris_manager::{Artist, ArtistStats, Song};
+use crate::mpris_manager::{AlbumStats, Artist, ArtistStats, Song};
 
 use chrono;
 
@@ -27,7 +27,12 @@ impl StatsStore {
             println!("Upgrading database from version {} to {}", version, CURRENT_DB_VERSION);
             // destructive reset (early stage)
             StatsStore::reset_database(&conn)?;
-            StatsStore::recreate_database(&conn)?;
+            // StatsStore::recreate_database(&conn)?;
+            /*
+                ALTER TABLE songs ADD COLUMN ignored INTEGER DEFAULT 0;
+                ALTER TABLE artists ADD COLUMN ignored INTEGER DEFAULT 0;
+                // So, I can add WHERE ignored = 0 in queries and ignore songs or artists chosen by the user
+             */
             conn.execute(
                 &format!("PRAGMA user_version = {};", CURRENT_DB_VERSION),
                 [],
@@ -282,6 +287,19 @@ impl StatsStore {
             ")
         )?;
 
+        /*
+        Something like that for collapse multiple songs with same title and artist (but different album)
+        SELECT
+        s.title,
+        GROUP_CONCAT(DISTINCT a.name) AS artists,
+        SUM(ld.seconds) AS total_seconds
+        FROM listening_days ld
+        JOIN songs s ON ld.song_id = s.id
+        JOIN song_artists sa ON sa.song_id = s.id
+        JOIN artists a ON a.id = sa.artist_id
+        GROUP BY lower(s.title), sa.artist_id;
+         */
+
         let mut rows = stmt.query([])?;
 
     let mut songs: Vec<Song> = Vec::new();
@@ -355,6 +373,46 @@ impl StatsStore {
         if let Ok(songs) = songs {
             for song in songs {
                 if let Ok(s) = song {
+                    results.push(s);
+                }
+            }
+        }
+        results
+    }
+
+    pub fn get_top_albums(&self, from: i32) -> Vec<AlbumStats> {
+        let to = 0;
+
+        let mut results = Vec::new();
+        let mut stmt = self.conn.prepare(&format!("
+            SELECT
+                s.album,
+                GROUP_CONCAT(DISTINCT a.name) AS artists,
+                SUM(ld.listened_time) AS total_seconds
+            FROM (
+                SELECT song_id, SUM(seconds) AS listened_time
+                FROM listening_days
+                WHERE day >= date('now', '{from} days', 'localtime') and day <= date('now', '{to} days', 'localtime')
+                GROUP BY song_id
+            ) ld
+            JOIN songs s ON ld.song_id = s.id
+            JOIN song_artists sa ON sa.song_id = s.id
+            JOIN artists a ON a.id = sa.artist_id
+            WHERE s.album IS NOT NULL AND s.album != ''
+            GROUP BY lower(s.album)
+            ORDER BY total_seconds DESC
+        ")).expect("select_top_albumns prepare ko");
+        let albums = stmt.query_map([], |row| {
+            Ok(AlbumStats {
+                name: row.get(0).expect("Album in query"),
+                artists: row.get(1).expect("Artists in query"),
+                listened_time: row.get(2).expect("sum_time in query")
+            })
+        });
+
+        if let Ok(albums) = albums {
+            for album in albums {
+                if let Ok(s) = album {
                     results.push(s);
                 }
             }

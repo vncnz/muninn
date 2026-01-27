@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
-import { SongInfo, SongPlaying } from "./types";
+import { SongPlaying } from "./types";
 import { Playing } from "./Playing/Playing";
 import { StatsSong } from "./StatsSong/StatsSong";
 import { StatsArtist } from "./StatsArtist/StatsArtist";
+import { StatsAlbum } from "./StatsAlbum/StatsAlbum";
 import { Lyrics } from "./Lyrics/Lyrics";
 
 function App() {
@@ -44,6 +45,8 @@ function App() {
     currentTab = <StatsSong playingId={song.metadata.id}/>
   } else if (groupType == 'artist') {
     currentTab = <StatsArtist />
+  } else if (groupType == 'album') {
+    currentTab = <StatsAlbum />
   }
 
   return (
@@ -56,6 +59,7 @@ function App() {
         <div className="stats-type-selector">
           <a onClick={() => { selectTab('song') }} className={groupType === 'song' ? 'active' : ''}>By song</a>
           <a onClick={() => { selectTab('artist') }} className={groupType === 'artist' ? 'active' : ''}>By artist</a>
+          <a onClick={() => { selectTab('album') }} className={groupType === 'album' ? 'active' : ''}>By album</a>
         </div>
         {currentTab}
       </div>

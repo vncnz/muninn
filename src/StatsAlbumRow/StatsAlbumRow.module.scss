@@ -1,0 +1,51 @@
+
+.albumstatrow {
+    position: relative;
+    // border-left: 2px solid var(--accent-1);
+    padding-left: 12px;
+    .time {
+        display: flex;
+        flex-direction: row;
+        gap: 5px;
+        align-items: center;
+    }
+    .title {
+        font-weight: 600;
+    }
+    .artist {
+        opacity: 1;
+    }
+    .album {
+        opacity: .7;
+    }
+    .artist_album {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        // color: var(--tertiary);
+    }
+    .duration {
+        color: var(--tertiary);
+    }
+    .listened {}
+}
+
+.progressBar {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    bottom: 5px;
+    width: 5px;
+    border: 1px solid var(--tertiary);
+    background-color: black;
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    & > div {
+        width: 100%;
+        background-color: var(--tertiary);
+    }
+}

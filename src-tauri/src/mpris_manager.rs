@@ -24,6 +24,13 @@ pub struct ArtistStats {
 }
 
 #[derive(Serialize, Clone, Debug)]
+pub struct AlbumStats {
+    pub name: String,
+    pub artists: String,
+    pub listened_time: f64
+}
+
+#[derive(Serialize, Clone, Debug)]
 pub struct Song {
     pub id: Option<i32>,
     pub hash: String,
@@ -222,7 +229,7 @@ impl MprisManager {
 
             let [ track_key, url ] = strip_last_chunk_from_string(&full_track_key).try_into().expect("exactly 2 fields expected");
 
-            if url.contains("youtube") {
+            if url.contains("youtube") || url.contains(".mov") || url.contains(".mkv") || url.contains(".mp4") {
                 // println!("Skipping YouTube track");
                 continue;
             }

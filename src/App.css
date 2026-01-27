@@ -120,6 +120,7 @@ button {
 }
 .stats-type-selector a {
   color: var(--tertiary);
+  cursor: pointer;
 }
 .stats-type-selector a.active {
   color: var(--secondary);

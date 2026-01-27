@@ -13,6 +13,12 @@ export type Artist = {
   name: String
 }
 
+export type AlbumStat = {
+  name: String,
+  artists: String,
+  listened_time: number
+}
+
 export type ArtistStat = {
   id?: number,
   name: String,
