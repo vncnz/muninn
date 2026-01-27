@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
-import { SongPlaying } from "./types";
+import { AlbumStat, ArtistStat, SongPlaying } from "./types";
 import { Playing } from "./Playing/Playing";
 import { StatsSong } from "./StatsSong/StatsSong";
-import { StatsArtist } from "./StatsArtist/StatsArtist";
-import { StatsAlbum } from "./StatsAlbum/StatsAlbum";
 import { Lyrics } from "./Lyrics/Lyrics";
+import { StatsGeneric } from "./StatsGeneric/StatsGeneric";
+import { StatsArtistRow } from "./StatsArtistRow/StatsArtistRow";
+import { invoke } from "@tauri-apps/api/core";
+import { StatsAlbumRow } from "./StatsAlbumRow/StatsAlbumRow";
 
 function App() {
   const [song, setSong] = useState({
@@ -44,9 +46,19 @@ function App() {
   if (groupType == 'song') {
     currentTab = <StatsSong playingId={song.metadata.id}/>
   } else if (groupType == 'artist') {
-    currentTab = <StatsArtist />
+    currentTab = <StatsGeneric<ArtistStat>
+      loadFn={(from) => invoke("get_top_artists", { from }) as Promise<ArtistStat[]> }
+      Row={({ item, max }) => <StatsArtistRow artist={item} max={max} />}
+      getValue={(a) => a.listened_time}
+      refreshLabel="Refresh Artist Stats"
+    />
   } else if (groupType == 'album') {
-    currentTab = <StatsAlbum />
+    currentTab = <StatsGeneric<AlbumStat>
+      loadFn={(from) => invoke("get_top_albums", { from }) as Promise<AlbumStat[]> }
+      Row={({ item, max }) => <StatsAlbumRow album={item} max={max} />}
+      getValue={(a) => a.listened_time}
+      refreshLabel="Refresh Album Stats"
+    />
   }
 
   return (
