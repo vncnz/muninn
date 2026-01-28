@@ -236,7 +236,7 @@ impl MprisManager {
 
             let position = parse_position(pc_position(&active_player));
 
-            let [ track_hash, _length ] = strip_last_chunk_from_string(&track_key).try_into().expect("exactly 2 fields expected");
+            let [ track_hash, length ] = strip_last_chunk_from_string(&track_key).try_into().expect("exactly 2 fields expected");
             // println!("Track hash: {}, length: {}", track_hash, length);
 
             if current.is_none() || current.as_ref().unwrap().hash != track_hash {
@@ -282,6 +282,19 @@ impl MprisManager {
             }
             last_position = position;
             if current.is_some() {
+                if current.clone().unwrap().length > 86_400 {
+                    let length = if let Ok(l) = length.parse::<i64>() { l } else { i64::MAX };
+                    let len_secs = ((length as f64) / 1000.0 / 1000.0) as i32;
+                    if len_secs <= 86_400 {
+                        let mut c = current.clone().unwrap();
+                        let mut store = shared_store.lock().expect("StatsStore poisoned");
+                        if store.fix_song_length(c.id.unwrap(), len_secs).is_ok() {
+                            println!("Fixed length {len_secs} for song {:?}", c.id);
+                            c.length = len_secs;
+                            current = Some(c);
+                        }
+                    }
+                }
                 let _ = app.emit("mpris-event", SongPlaying { metadata: current.clone().unwrap(), position });
             }
 

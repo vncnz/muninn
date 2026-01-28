@@ -260,6 +260,20 @@ impl StatsStore {
         Ok(())
     }
 
+    pub fn fix_song_length(& mut self, songid: i32, length: i32) -> Result<(), rusqlite::Error> {
+        let tx = self.conn.transaction()?;
+
+        tx.execute(
+            r#"
+                UPDATE songs SET length = ? where id = ?
+            "#,
+            params![ length, songid ],
+        )?;
+        println!("Updating length {length} for song {songid}");
+        tx.commit()?;
+        Ok(())
+    }
+
     pub fn get_top_songs(&self, from: i32) -> Result<Vec<Song>> {
         let to = 0;
 

@@ -26,6 +26,7 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - ~~Change stats UI, compressing data in a narrow column~~
 - ~~Add time ranges (today, 7d, 30d, all)~~
 - ~~Stats by album~~
+- ~~Song length update when wrong in the first mpris event~~
 - Exclude plays without an artist
 - Limit number of results shown in stats (top 10, top 25, top 50, something like that)
 - Collapse songs belonging to multiple albums when reading statistics from the database
