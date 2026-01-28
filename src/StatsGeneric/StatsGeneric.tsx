@@ -2,7 +2,7 @@ import classes from "./StatsGeneric.module.scss";
 import { useEffect, useState } from "react";
 
 type StatsGenericProps<T> = {
-  loadFn: (from: number) => Promise<T[]>
+  loadFn: (from: number, limit: number) => Promise<T[]>
   Row: React.ComponentType<{ item: T; max: number; idd: number }>
   getValue: (item: T) => number
   refreshLabel?: string
@@ -22,14 +22,15 @@ export function StatsGeneric<T>({
     const forever = -1000000
     const [stats, setStats] = useState<T[]>([])
     const [period, setPeriod] = useState(forever)
+    const [topLimit, setTopLimit] = useState(25)
 
     const load = async () => {
-        const s = await loadFn(period)
+        const s = await loadFn(period, topLimit)
         setStats(s)
         console.log('updated stats', s)
     }
 
-    useEffect(() => { load(); }, [period]);
+    useEffect(() => { load(); }, [period, topLimit]);
 
     const scrollToHighlight = () => {
         if (highlightId === undefined) return;
@@ -58,6 +59,12 @@ export function StatsGeneric<T>({
                     <a onClick={() => setPeriod(-6)} className={classes.trSelector + (period === -6 ? (' '+classes.trActive) : '')}>Last 7d</a>
                     <a onClick={() => setPeriod(-30)} className={classes.trSelector + (period === -30 ? (' '+classes.trActive) : '')}>Last 30d</a>
                     <a onClick={() => setPeriod(forever)} className={classes.trSelector + (period === forever ? (' '+classes.trActive) : '')}>Forever</a>
+                </span>
+                <span>
+                    <a onClick={() => setTopLimit(10)} className={classes.trSelector + (topLimit === 10 ? (' '+classes.trActive) : '')}>Top10</a>
+                    <a onClick={() => setTopLimit(25)} className={classes.trSelector + (topLimit === 25 ? (' '+classes.trActive) : '')}>Top25</a>
+                    <a onClick={() => setTopLimit(50)} className={classes.trSelector + (topLimit === 50 ? (' '+classes.trActive) : '')}>Top50</a>
+                    <a onClick={() => setTopLimit(100)} className={classes.trSelector + (topLimit === 100 ? (' '+classes.trActive) : '')}>Top100</a>
                 </span>
             </div>
             <div className={classes.lst}>

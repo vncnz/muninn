@@ -20,21 +20,21 @@ fn get_stats(state: tauri::State<'_, SharedStats>) -> Result<HashMap<String, Son
 }
 
 #[tauri::command]
-fn get_stats_all(store: tauri::State<'_, SharedStore>, from: i32) -> Result<Vec<Song>, String> {
+fn get_stats_all(store: tauri::State<'_, SharedStore>, from: i32, limit: i32) -> Result<Vec<Song>, String> {
     let store = store.lock().expect("StatsStore poisoned");
-    Ok(store.get_top_songs(from).expect("Impossible to get songs"))
+    Ok(store.get_top_songs(from, limit).expect("Impossible to get songs"))
 }
 
 #[tauri::command]
-fn get_top_artists(store: tauri::State<'_, SharedStore>, from: i32) -> Result<Vec<ArtistStats>, String> {
+fn get_top_artists(store: tauri::State<'_, SharedStore>, from: i32, limit: i32) -> Result<Vec<ArtistStats>, String> {
     let store = store.lock().expect("StatsStore poisoned");
-    Ok(store.get_top_artists(from))
+    Ok(store.get_top_artists(from, limit))
 }
 
 #[tauri::command]
-fn get_top_albums(store: tauri::State<'_, SharedStore>, from: i32) -> Result<Vec<AlbumStats>, String> {
+fn get_top_albums(store: tauri::State<'_, SharedStore>, from: i32, limit: i32) -> Result<Vec<AlbumStats>, String> {
     let store = store.lock().expect("StatsStore poisoned");
-    Ok(store.get_top_albums(from))
+    Ok(store.get_top_albums(from, limit))
 }
 
 

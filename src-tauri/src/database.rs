@@ -274,30 +274,38 @@ impl StatsStore {
         Ok(())
     }
 
-    pub fn get_top_songs(&self, from: i32) -> Result<Vec<Song>> {
+    pub fn get_top_songs(&self, from: i32, limit: i32) -> Result<Vec<Song>> {
         let to = 0;
 
         let mut stmt = self.conn.prepare(
             &format!("
+            WITH top_songs AS (
+                SELECT
+                    song_id,
+                    SUM(seconds) AS listened_time
+                FROM listening_days
+                WHERE day >= date('now', '{from} days', 'localtime')
+                AND day <= date('now', '{to} days', 'localtime')
+                GROUP BY song_id
+                ORDER BY listened_time DESC
+                LIMIT {limit}
+            )
             SELECT
                 s.id,
                 s.hash,
                 s.title,
                 s.album,
                 s.length,
-                d.listened_time,
-                a.id,
-                a.name
-            FROM (
-                SELECT song_id, SUM(seconds) AS listened_time
-                FROM listening_days
-                WHERE day >= date('now', '{from} days', 'localtime') and day <= date('now', '{to} days', 'localtime')
-                GROUP BY song_id
-            ) d
-            LEFT JOIN songs s ON d.song_id = s.id
+                ts.listened_time,
+                a.id AS artist_id,
+                a.name AS artist_name
+            FROM top_songs ts
+            JOIN songs s ON ts.song_id = s.id
             LEFT JOIN song_artists sa ON sa.song_id = s.id
             LEFT JOIN artists a ON a.id = sa.artist_id
-            ORDER BY d.listened_time DESC, a.name ASC
+            ORDER BY
+                ts.listened_time DESC,
+                a.name ASC;
             ")
         )?;
 
@@ -355,7 +363,7 @@ impl StatsStore {
     }
 
 
-    pub fn get_top_artists(&self, from: i32) -> Vec<ArtistStats> {
+    pub fn get_top_artists(&self, from: i32, limit: i32) -> Vec<ArtistStats> {
         let to = 0;
 
         let mut results = Vec::new();
@@ -375,6 +383,7 @@ impl StatsStore {
             JOIN artists a       ON a.id = sa.artist_id
             GROUP BY a.id, a.name
             ORDER BY total_listened_time DESC
+            LIMIT 0,{limit}
         ")).expect("prepare ko");
         let songs = stmt.query_map([], |row| {
             Ok(ArtistStats {
@@ -394,7 +403,7 @@ impl StatsStore {
         results
     }
 
-    pub fn get_top_albums(&self, from: i32) -> Vec<AlbumStats> {
+    pub fn get_top_albums(&self, from: i32, limit: i32) -> Vec<AlbumStats> {
         let to = 0;
 
         let mut results = Vec::new();
@@ -428,6 +437,7 @@ impl StatsStore {
             JOIN artists a ON a.id = sa.artist_id
             GROUP BY at.album, at.total_seconds
             ORDER BY at.total_seconds DESC
+            LIMIT 0,{limit}
         ")).expect("select_top_albumns prepare ko");
         let albums = stmt.query_map([], |row| {
             Ok(AlbumStats {
