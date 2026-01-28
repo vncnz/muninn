@@ -385,22 +385,35 @@ impl StatsStore {
 
         let mut results = Vec::new();
         let mut stmt = self.conn.prepare(&format!("
-            SELECT
-                s.album,
-                GROUP_CONCAT(DISTINCT a.name) AS artists,
-                SUM(ld.listened_time) AS total_seconds
-            FROM (
-                SELECT song_id, SUM(seconds) AS listened_time
+            WITH song_time AS (
+                SELECT
+                    song_id,
+                    SUM(seconds) AS listened_time
                 FROM listening_days
-                WHERE day >= date('now', '{from} days', 'localtime') and day <= date('now', '{to} days', 'localtime')
+                WHERE day >= date('now', '{from} days', 'localtime')
+                AND day <= date('now', '{to} days', 'localtime')
                 GROUP BY song_id
-            ) ld
-            JOIN songs s ON ld.song_id = s.id
+            ),
+            album_time AS (
+                SELECT
+                    lower(s.album) AS album_key,
+                    s.album AS album,
+                    SUM(st.listened_time) AS total_seconds
+                FROM song_time st
+                JOIN songs s ON s.id = st.song_id
+                WHERE s.album IS NOT NULL AND s.album != ''
+                GROUP BY album_key
+            )
+            SELECT
+                at.album,
+                GROUP_CONCAT(DISTINCT a.name) AS artists,
+                at.total_seconds
+            FROM album_time at
+            JOIN songs s ON lower(s.album) = at.album_key
             JOIN song_artists sa ON sa.song_id = s.id
             JOIN artists a ON a.id = sa.artist_id
-            WHERE s.album IS NOT NULL AND s.album != ''
-            GROUP BY lower(s.album)
-            ORDER BY total_seconds DESC
+            GROUP BY at.album, at.total_seconds
+            ORDER BY at.total_seconds DESC
         ")).expect("select_top_albumns prepare ko");
         let albums = stmt.query_map([], |row| {
             Ok(AlbumStats {
