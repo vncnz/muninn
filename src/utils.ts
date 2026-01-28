@@ -2,10 +2,15 @@ import { Artist } from "./types"
 
 export const artistsToString = (artists: Artist[]) => {
     if (!artists) {
-      console.log('no artists??')
+      // console.log('no artists??')
       return ''
     }
+    try {
     return artists.map((a: Artist) => a.name).join(', ')
+    } catch (e) {
+        console.log(e, artists)
+        return 'err'
+    }
 }
 
 export function timeToHuman (time: number) {

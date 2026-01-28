@@ -6,7 +6,7 @@ import classes from "./StatsSongRow.module.scss";
 // import { invoke } from "@tauri-apps/api/core";
 
 
-export function StatsSongRow({ song, max }: { song: songStatTable, max: number }) {
+export function StatsSongRow({ song, max, idd }: { song: songStatTable, max: number, idd: any }) {
     // const [songStats, setSongStats] = useState([] as SongInfo[]);
     
     /*let columns = [
@@ -24,7 +24,7 @@ export function StatsSongRow({ song, max }: { song: songStatTable, max: number }
     ] as Column<songStatTable>[]*/
 
     return (
-        <div className={classes.songstatrow}>
+        <div className={classes.songstatrow + ' id-' + idd}>
             <div className={classes.time}>
                 <div className={classes.progressBar}>
                     <div style={{ height: `${((song.listened_time  as number)/ max)*100}%` }}></div>

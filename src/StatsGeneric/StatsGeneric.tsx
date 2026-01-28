@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 
 type StatsGenericProps<T> = {
   loadFn: (from: number) => Promise<T[]>
-  Row: React.ComponentType<{ item: T; max: number }>
+  Row: React.ComponentType<{ item: T; max: number; idd: number }>
   getValue: (item: T) => number
   refreshLabel?: string
+  highlightId?: number|undefined
 }
 
 // T is ArtistStat, for example
@@ -15,7 +16,8 @@ export function StatsGeneric<T>({
   loadFn,
   Row,
   getValue,
-  refreshLabel = "Refresh"
+  refreshLabel = "Refresh",
+  highlightId = undefined
 }: StatsGenericProps<T>) {
     const forever = -1000000
     const [stats, setStats] = useState<T[]>([])
@@ -24,9 +26,22 @@ export function StatsGeneric<T>({
     const load = async () => {
         const s = await loadFn(period)
         setStats(s)
+        console.log('updated stats', s)
     }
 
-    useEffect(() => { load(); }, [period, loadFn]);
+    useEffect(() => { load(); }, [period]);
+
+    const scrollToHighlight = () => {
+        if (highlightId === undefined) return;
+        // let rowEl = document.querySelector(`.row-id-${playingId}`);
+        // let idx = stats.findIndex(el => el.id === highlightId)
+        // if (idx > -1) {
+        let rowEl = document.querySelector(`.id-${highlightId}`);
+        rowEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // } else {
+        //    console.log('Playing song not found in list', highlightId)
+        // }
+    }
 
     // let full = artistStats.reduce((acc: number, v: any) => acc + v.listened_time, 0)
     let max = stats.reduce((acc: number, v: T) => Math.max(acc, getValue(v)), 0)
@@ -36,6 +51,7 @@ export function StatsGeneric<T>({
             <div className={classes.controls}>
                 <span>
                     <a onClick={load}>&#8635; {refreshLabel}</a>
+                    { highlightId ? <a onClick={scrollToHighlight}>&#9658; Scroll to current</a> : null }
                 </span>
                 <span>
                     <a onClick={() => setPeriod(0)} className={classes.trSelector + (period === 0 ? (' '+classes.trActive) : '')}>Today</a>
@@ -46,7 +62,7 @@ export function StatsGeneric<T>({
             </div>
             <div className={classes.lst}>
                 {stats.map((item, i) =>
-                    <Row key={i} item={item} max={max} />
+                    <Row key={i} item={item} max={max} idd={i} />
                 )}
             </div>
         </div>

@@ -3,10 +3,10 @@ import { timeConversion } from "../utils";
 import classes from "./StatsArtistRow.module.scss";
 
 
-export function StatsArtistRow({ artist, max }: { artist: ArtistStat, max: number }) {
+export function StatsArtistRow({ artist, max, idd }: { artist: ArtistStat, max: number, idd: number }) {
 
     return (
-        <div className={classes.artiststatrow}>
+        <div className={classes.artiststatrow + ' id-' + idd}>
             <div className={classes.time}>
                 <div className={classes.progressBar}>
                     <div style={{ height: `${((artist.listened_time  as number)/ max)*100}%` }}></div>

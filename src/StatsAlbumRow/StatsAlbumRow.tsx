@@ -3,10 +3,10 @@ import { timeConversion } from "../utils";
 import classes from "./StatsAlbumRow.module.scss";
 
 
-export function StatsAlbumRow({ album, max }: { album: AlbumStat, max: number }) {
-
+export function StatsAlbumRow({ album, max, idd }: { album: AlbumStat, max: number, idd: number }) {
+    console.log('artists', album.artists)
     return (
-        <div className={classes.albumstatrow}>
+        <div className={classes.albumstatrow + ' id-' + idd}>
             <div className={classes.time}>
                 <div className={classes.progressBar}>
                     <div style={{ height: `${((album.listened_time  as number)/ max)*100}%` }}></div>

@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
-import { AlbumStat, ArtistStat, SongPlaying } from "./types";
+import { AlbumStat, ArtistStat, SongPlaying, songStatTable } from "./types";
 import { Playing } from "./Playing/Playing";
-import { StatsSong } from "./StatsSong/StatsSong";
 import { Lyrics } from "./Lyrics/Lyrics";
 import { StatsGeneric } from "./StatsGeneric/StatsGeneric";
 import { StatsArtistRow } from "./StatsArtistRow/StatsArtistRow";
 import { invoke } from "@tauri-apps/api/core";
 import { StatsAlbumRow } from "./StatsAlbumRow/StatsAlbumRow";
+import { StatsSongRow } from "./StatsSongRow/StatsSongRow";
 
 function App() {
   const [song, setSong] = useState({
@@ -42,22 +42,51 @@ function App() {
     setGroupType(type)
   }
 
+  const loadSongStats = useCallback(
+    (from: number) =>
+      invoke("get_stats_all", { from }) as Promise<songStatTable[]>,
+    []
+  )
+
+  const loadArtistStats = useCallback(
+    (from: number) =>
+      invoke("get_top_artists", { from }) as Promise<ArtistStat[]>,
+    []
+  )
+
+  const loadAlbumStats = useCallback(
+    (from: number) =>
+      invoke("get_top_albums", { from }) as Promise<AlbumStat[]>,
+    []
+  )
+
+
   let currentTab = null
   if (groupType == 'song') {
-    currentTab = <StatsSong playingId={song.metadata.id}/>
+    // currentTab = <StatsSong playingId={song.metadata.id} />
+    currentTab = <StatsGeneric<songStatTable>
+      loadFn={loadSongStats}
+      Row={({ item, max, idd }) => <StatsSongRow song={item} max={max} idd={idd} />}
+      getValue={(a) => a.listened_time}
+      refreshLabel="Refresh Song Stats"
+      highlightId={song.metadata.id}
+      key='song'
+    />
   } else if (groupType == 'artist') {
     currentTab = <StatsGeneric<ArtistStat>
-      loadFn={(from) => invoke("get_top_artists", { from }) as Promise<ArtistStat[]> }
-      Row={({ item, max }) => <StatsArtistRow artist={item} max={max} />}
+      loadFn={loadArtistStats}
+      Row={({ item, max, idd }) => <StatsArtistRow artist={item} max={max} idd={idd} />}
       getValue={(a) => a.listened_time}
       refreshLabel="Refresh Artist Stats"
+      key='artist'
     />
   } else if (groupType == 'album') {
     currentTab = <StatsGeneric<AlbumStat>
-      loadFn={(from) => invoke("get_top_albums", { from }) as Promise<AlbumStat[]> }
-      Row={({ item, max }) => <StatsAlbumRow album={item} max={max} />}
+      loadFn={loadAlbumStats}
+      Row={({ item, max, idd }) => <StatsAlbumRow album={item} max={max} idd={idd} />}
       getValue={(a) => a.listened_time}
       refreshLabel="Refresh Album Stats"
+      key='album'
     />
   }
 
