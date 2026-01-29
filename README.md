@@ -5,6 +5,11 @@ A Linux desktop companion that remembers what you listen to, with synced lyrics 
 Muninn (Old Norse for "memory" or "mind") is one of the two ravens, alongside Huginn ("thought" in English), that accompany the god Odin. They act as his messengers, flying across the world to gather information and returning to whisper news into his ears. 
 Muninn represents memory, while Huginn represents thought/mind. In the same spirit, Muninn-the-project collects MPRIS data, remembers what you listen to, and gives that information back to you.
 
+## Disclaimer
+
+This project is a learning-driven implementation used to explore React and Tauri in a real-world desktop application.
+The focus is on architecture, data flow, and maintainability rather than feature completeness.
+
 ## Features
 
 ### Current playing
