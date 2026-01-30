@@ -44,3 +44,9 @@ export type songStatTable = {
   listened_time: number,
   ratio: number
 }
+
+export type StatsForChart = {
+  // list: songStatTable[]
+  date: String,
+  ids: number[]
+}

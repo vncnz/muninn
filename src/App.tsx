@@ -9,6 +9,7 @@ import { StatsArtistRow } from "./StatsArtistRow/StatsArtistRow";
 import { invoke } from "@tauri-apps/api/core";
 import { StatsAlbumRow } from "./StatsAlbumRow/StatsAlbumRow";
 import { StatsSongRow } from "./StatsSongRow/StatsSongRow";
+import { StatsChart } from "./StatsChart/StatsChart";
 
 function App() {
   const [song, setSong] = useState({
@@ -92,6 +93,7 @@ function App() {
 
   return (
     <main className="container">
+      <StatsChart />
       <div className={"playing-info"}>
         <Playing playing={song} />
       </div>
