@@ -44,19 +44,19 @@ function App() {
   }
 
   const loadSongStats = useCallback(
-    (from: number, limit: number) =>
+    (from: number, to: number, limit: number) =>
       invoke("get_stats_all", { from, limit }) as Promise<songStatTable[]>,
     []
   )
 
   const loadArtistStats = useCallback(
-    (from: number, limit: number) =>
+    (from: number, to: number, limit: number) =>
       invoke("get_top_artists", { from, limit }) as Promise<ArtistStat[]>,
     []
   )
 
   const loadAlbumStats = useCallback(
-    (from: number, limit: number) =>
+    (from: number, to: number, limit: number) =>
       invoke("get_top_albums", { from, limit }) as Promise<AlbumStat[]>,
     []
   )
