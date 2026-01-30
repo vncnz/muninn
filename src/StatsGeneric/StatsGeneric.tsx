@@ -2,7 +2,7 @@ import classes from "./StatsGeneric.module.scss";
 import { useEffect, useState } from "react";
 
 type StatsGenericProps<T> = {
-  loadFn: (from: number, limit: number) => Promise<T[]>
+  loadFn: (from: number, to: number, limit: number) => Promise<T[]>
   Row: React.ComponentType<{ item: T; max: number; idd: number }>
   getValue: (item: T) => number
   refreshLabel?: string
@@ -25,7 +25,7 @@ export function StatsGeneric<T>({
     const [topLimit, setTopLimit] = useState(25)
 
     const load = async () => {
-        const s = await loadFn(period, topLimit)
+        const s = await loadFn(period, 0, topLimit)
         setStats(s)
         console.log('updated stats', s)
     }

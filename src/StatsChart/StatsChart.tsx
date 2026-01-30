@@ -1,10 +1,17 @@
 // import { ArtistStat } from "../types";
 // import { timeConversion } from "../utils";
-import { JSX } from "react";
-import { StatsForChart } from "../types";
+import { JSX, useEffect } from "react";
+import { SongHistoryStats, StatsForChart } from "../types";
 import classes from "./StatsChart.module.scss";
+import { invoke } from "@tauri-apps/api/core";
 
 export function StatsChart() {
+
+    const load = async () => {
+        let res = await (invoke("get_songs_history", { from: -5, to: 0, limit: 10, step: 1 }) as Promise<SongHistoryStats[]>)
+        console.log('get_songs_history', res)
+    }
+    useEffect(() => { load() }, [])
 
     let lst: StatsForChart[] = [{
         date: '2026-01-20',

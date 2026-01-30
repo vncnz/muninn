@@ -50,3 +50,9 @@ export type StatsForChart = {
   date: String,
   ids: number[]
 }
+
+export type SongHistoryStats = {
+    date: String,
+    songid: number,
+    listened_time: number
+}

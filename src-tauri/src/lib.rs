@@ -1,7 +1,7 @@
 mod mpris_manager;
 mod database;
 use std::{sync::{Arc, Mutex}};
-use crate::{database::StatsStore, mpris_manager::{AlbumStats, ArtistStats, MprisManager, Song, SongStats}};
+use crate::{database::StatsStore, mpris_manager::{AlbumStats, ArtistStats, MprisManager, Song, SongHistoryStats, SongStats}};
 use std::collections::HashMap;
 use tauri::{Manager};
 use std::sync::{RwLock};
@@ -35,6 +35,12 @@ fn get_top_artists(store: tauri::State<'_, SharedStore>, from: i32, limit: i32) 
 fn get_top_albums(store: tauri::State<'_, SharedStore>, from: i32, limit: i32) -> Result<Vec<AlbumStats>, String> {
     let store = store.lock().expect("StatsStore poisoned");
     Ok(store.get_top_albums(from, limit))
+}
+
+#[tauri::command]
+fn get_songs_history(store: tauri::State<'_, SharedStore>, from: i32, to: i32, limit: i32, step: i32) -> Result<Vec<SongHistoryStats>, String> {
+    let store = store.lock().expect("StatsStore poisoned");
+    Ok(store.get_songs_history(from, to, limit, step))
 }
 
 
@@ -74,7 +80,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         // .invoke_handler(tauri::generate_handler![get_stats_all])
-        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists, get_top_albums])
+        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists, get_top_albums, get_songs_history])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

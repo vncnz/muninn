@@ -3,7 +3,7 @@ use std::path::Path;
 use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
 
-use crate::mpris_manager::{AlbumStats, Artist, ArtistStats, Song};
+use crate::mpris_manager::{AlbumStats, Artist, ArtistStats, Song, SongHistoryStats};
 
 use chrono;
 
@@ -450,6 +450,53 @@ impl StatsStore {
         if let Ok(albums) = albums {
             for album in albums {
                 if let Ok(s) = album {
+                    results.push(s);
+                }
+            }
+        }
+        results
+    }
+
+    pub fn get_songs_history(&self, from: i32, to: i32, limit: i32, step: i32) -> Vec<SongHistoryStats> {
+        let anchor = "1970-01-01"; // Per bucket alignment
+
+        let mut results = Vec::new();
+        let mut stmt = self.conn.prepare(&format!("
+            WITH top_songs AS (
+                SELECT song_id
+                FROM listening_days
+                WHERE day BETWEEN date('now', '{from} days', 'localtime')
+                            AND date('now', '{to} days', 'localtime')
+                GROUP BY song_id
+                ORDER BY SUM(seconds) DESC
+                LIMIT {limit}
+            )
+            SELECT
+                date(
+                    ld.day,
+                    '-' || ((julianday(ld.day) - julianday('{anchor}')) % {step}) || ' days'
+                ) AS bucket,
+                ld.song_id,
+                SUM(ld.seconds) AS listened_time
+            FROM listening_days ld
+            JOIN top_songs ts ON ts.song_id = ld.song_id
+            WHERE ld.day BETWEEN date('now', '{from} days', 'localtime')
+                            AND date('now', '{to} days', 'localtime')
+            GROUP BY bucket, ld.song_id
+            ORDER BY bucket ASC;
+
+        ")).expect("prepare ko");
+        let songs = stmt.query_map([], |row| {
+            Ok(SongHistoryStats {
+                date: row.get(0).expect("Date in query"),
+                songid: row.get(1).expect("SongId in query"),
+                listened_time: row.get(2).expect("listened_time in query")
+            })
+        });
+
+        if let Ok(songs) = songs {
+            for song in songs {
+                if let Ok(s) = song {
                     results.push(s);
                 }
             }
