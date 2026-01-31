@@ -18,6 +18,7 @@ function App() {
   } as SongPlaying);
 
   const [groupType, setGroupType] = useState('song')
+  const [showHistory, setShowHistory] = useState(true)
 
   
   useEffect(() => {
@@ -93,12 +94,13 @@ function App() {
 
   return (
     <main className="container">
-      <StatsChart />
+      { showHistory ? <StatsChart /> : null}
       <div className={"playing-info"}>
         <Playing playing={song} />
       </div>
 
       <div className="stats-section">
+        <button onClick={() => { setShowHistory(!showHistory) }}>Show/hide history</button>
         <div className="stats-type-selector">
           <a onClick={() => { selectTab('song') }} className={groupType === 'song' ? 'active' : ''}>By song</a>
           <a onClick={() => { selectTab('artist') }} className={groupType === 'artist' ? 'active' : ''}>By artist</a>
