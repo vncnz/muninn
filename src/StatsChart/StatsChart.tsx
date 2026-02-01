@@ -26,7 +26,7 @@ export function StatsChart() {
     }, [])
 
     const load = async () => {
-        let res = await (invoke("get_songs_history_cumulative", { from: -8, to: 0, limit: 10, step: 3 }) as Promise<SongHistoryStats[]>)
+        let res = await (invoke("get_songs_history_cumulative", { from: -12, to: 0, limit: 10, step: 1 }) as Promise<SongHistoryStats[]>)
         console.log('get_songs_history_cumulative', res)
         sethistoryData(res)
     }
