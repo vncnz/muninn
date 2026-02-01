@@ -462,28 +462,125 @@ impl StatsStore {
 
         let mut results = Vec::new();
         let mut stmt = self.conn.prepare(&format!("
-            WITH top_songs AS (
-                SELECT song_id
+            WITH bucketed AS (
+                SELECT
+                    date(
+                        day,
+                        '-' || ((julianday(day) - julianday('{anchor}')) % {step}) || ' days'
+                    ) AS bucket,
+                    song_id,
+                    SUM(seconds) AS listened_time
                 FROM listening_days
                 WHERE day BETWEEN date('now', '{from} days', 'localtime')
                             AND date('now', '{to} days', 'localtime')
-                GROUP BY song_id
-                ORDER BY SUM(seconds) DESC
-                LIMIT {limit}
+                GROUP BY bucket, song_id
+            ),
+            ranked AS (
+                SELECT
+                    bucket,
+                    song_id,
+                    listened_time,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY bucket
+                        ORDER BY listened_time DESC
+                    ) AS rnk
+                FROM bucketed
             )
             SELECT
-                date(
-                    ld.day,
-                    '-' || ((julianday(ld.day) - julianday('{anchor}')) % {step}) || ' days'
-                ) AS bucket,
-                ld.song_id,
-                SUM(ld.seconds) AS listened_time
-            FROM listening_days ld
-            JOIN top_songs ts ON ts.song_id = ld.song_id
-            WHERE ld.day BETWEEN date('now', '{from} days', 'localtime')
-                            AND date('now', '{to} days', 'localtime')
-            GROUP BY bucket, ld.song_id
-            ORDER BY bucket ASC;
+                bucket,
+                song_id,
+                listened_time
+            FROM ranked
+            WHERE rnk <= {limit}
+            ORDER BY bucket ASC, listened_time DESC;
+
+        ")).expect("prepare ko");
+        let songs = stmt.query_map([], |row| {
+            Ok(SongHistoryStats {
+                date: row.get(0).expect("Date in query"),
+                songid: row.get(1).expect("SongId in query"),
+                listened_time: row.get(2).expect("listened_time in query")
+            })
+        });
+
+        if let Ok(songs) = songs {
+            for song in songs {
+                if let Ok(s) = song {
+                    results.push(s);
+                }
+            }
+        }
+        results
+    }
+
+    pub fn get_songs_history_cumulative(&self, from: i32, to: i32, limit: i32, step: i32) -> Vec<SongHistoryStats> {
+        // let anchor = "1970-01-01"; // Per bucket alignment
+
+        let mut results = Vec::new();
+        let mut stmt = self.conn.prepare(&format!("
+
+-- build all buckets
+WITH RECURSIVE buckets AS (
+    SELECT date('now', '{from} days', 'localtime') AS bucket
+    UNION ALL
+    SELECT date(bucket, '+{step} days')
+    FROM buckets
+    WHERE bucket < date('now', '{to} days', 'localtime')
+),
+
+-- limit song pool for the query
+songs_universe AS (
+    SELECT DISTINCT song_id
+    FROM listening_days
+    WHERE day <= date('now', '{to} days', 'localtime')
+),
+
+-- put songs in buckets
+bucketed AS (
+    SELECT
+        b.bucket,
+        s.song_id,
+        COALESCE(SUM(ld.seconds), 0) AS bucket_seconds
+    FROM buckets b
+    CROSS JOIN songs_universe s
+    LEFT JOIN listening_days ld
+        ON ld.song_id = s.song_id
+       AND ld.day >= b.bucket
+       AND ld.day < date(b.bucket, '+{step} days')
+    GROUP BY b.bucket, s.song_id
+),
+
+-- compute cumulative values
+cumulative AS (
+    SELECT
+        bucket,
+        song_id,
+        SUM(bucket_seconds) OVER (
+            PARTITION BY song_id
+            ORDER BY bucket
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS cumulative_seconds
+    FROM bucketed
+),
+
+-- rank songs
+ranked AS (
+    SELECT
+        bucket,
+        song_id,
+        cumulative_seconds,
+        ROW_NUMBER() OVER (
+            PARTITION BY bucket
+            ORDER BY cumulative_seconds DESC
+        ) AS rnk
+    FROM cumulative
+)
+
+-- limit the number of results
+SELECT *
+FROM ranked
+WHERE rnk <= {limit}
+ORDER BY bucket, rnk;
 
         ")).expect("prepare ko");
         let songs = stmt.query_map([], |row| {

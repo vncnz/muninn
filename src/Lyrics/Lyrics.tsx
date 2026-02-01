@@ -44,8 +44,6 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
                     console.log('No lineEl found for idx', selectedRowIdx)
                 }
             }
-        } else {
-            console.log('No lyrics or not timed')
         }
 
         let cancelled = false;

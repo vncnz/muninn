@@ -10,6 +10,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { StatsAlbumRow } from "./StatsAlbumRow/StatsAlbumRow";
 import { StatsSongRow } from "./StatsSongRow/StatsSongRow";
 import { StatsChart } from "./StatsChart/StatsChart";
+import React from "react";
+
+let StatsChartMemorized = React.memo(() => {
+  return <StatsChart key='history' />
+})
 
 function App() {
   const [song, setSong] = useState({
@@ -94,7 +99,7 @@ function App() {
 
   return (
     <main className="container">
-      { showHistory ? <StatsChart /> : null}
+      { showHistory ? <StatsChartMemorized key='history' /> : null }
       <div className={"playing-info"}>
         <Playing playing={song} />
       </div>
