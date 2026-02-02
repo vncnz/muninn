@@ -48,6 +48,18 @@ fn get_songs_history_cumulative(store: tauri::State<'_, SharedStore>, from: i32,
     Ok(store.get_songs_history_cumulative(from, to, limit, step))
 }
 
+#[tauri::command]
+fn get_songs_by_id(store: tauri::State<'_, SharedStore>, idx: Vec<i32>) -> Result<Vec<Song>, String> {
+    let store = store.lock().expect("StatsStore poisoned");
+    let mut results = Vec::<Song>::new();
+    for id in idx {
+        if let Ok(Some(song)) = store.get_song_by_id(id) {
+            results.push(song)
+        }
+    }
+    Ok(results)
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -85,7 +97,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         // .invoke_handler(tauri::generate_handler![get_stats_all])
-        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_songs_history_cumulative])
+        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_songs_history_cumulative, get_songs_by_id])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

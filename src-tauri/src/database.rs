@@ -101,8 +101,13 @@ impl StatsStore {
         )?;
         Ok(())
     } */
-
+    pub fn get_song_by_id(&self, id: i32) -> Result<Option<Song>> {
+        self.get_song_by("", id)
+    }
     pub fn get_song_by_hash(&self, hash: &str) -> Result<Option<Song>> {
+        self.get_song_by(hash, 0)
+    }
+    pub fn get_song_by(&self, hash: &str, id: i32) -> Result<Option<Song>> {
         let mut stmt = self.conn.prepare(
             r#"
             SELECT
@@ -117,12 +122,12 @@ impl StatsStore {
             FROM songs s
             LEFT JOIN song_artists sa ON sa.song_id = s.id
             LEFT JOIN artists a ON a.id = sa.artist_id
-            WHERE s.hash = ?
+            WHERE s.hash = ? or s.id = ?
             ORDER BY a.name
             "#
         )?;
 
-        let mut rows = stmt.query(params![hash])?;
+        let mut rows = stmt.query(params![hash, id])?;
 
         // println!("Querying song by hash: {:?}, {} results", hash, rows.size_hint().0);
 

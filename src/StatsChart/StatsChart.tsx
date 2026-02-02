@@ -1,16 +1,19 @@
 // import { ArtistStat } from "../types";
 // import { timeConversion } from "../utils";
 import { JSX, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { SongHistoryStats } from "../types";
+import { SongHistoryStats, SongInfo } from "../types";
 import classes from "./StatsChart.module.scss";
 import { invoke } from "@tauri-apps/api/core";
-import { getPalette } from "../utils";
+import { artistsToString, getPalette, timeConversion, timeToHuman } from "../utils";
+
+type SongsMap = Record<string, SongInfo>
 
 export function StatsChart() {
 
     const svgRef = useRef<HTMLDivElement | null>(null)
 
     const [historyData, sethistoryData] = useState<SongHistoryStats[]>([])
+    const [songCacheData, setSongCacheData] = useState<SongsMap>({})
     const [size, setSize] = useState<{ width: number; height: number } | null>(null)
 
     useLayoutEffect(() => {
@@ -26,11 +29,23 @@ export function StatsChart() {
     }, [])
 
     const load = async () => {
-        let res = await (invoke("get_songs_history_cumulative", { from: -12, to: 0, limit: 10, step: 1 }) as Promise<SongHistoryStats[]>)
+        let res = await (invoke("get_songs_history_cumulative", { from: -8, to: 0, limit: 12, step: 1 }) as Promise<SongHistoryStats[]>)
         console.log('get_songs_history_cumulative', res)
         sethistoryData(res)
     }
+    const loadSongsData = async () => {
+        if (historyData.length) {
+            let res = await (invoke("get_songs_by_id", { idx: historyData.map(v => v.songid) }) as Promise<SongInfo[]>)
+            let map: SongsMap = {}
+            res.forEach((song: SongInfo) => { map[song.id!] = song })
+            console.log('get_songs_by_id', res)
+            setSongCacheData(map)
+        } else {
+            console.warn('No historyData')
+        }
+    }
     useEffect(() => { load() }, [])
+    useEffect(() => { loadSongsData() }, [historyData])
 
     let normalize = false
     let all_idx: number[] = []
@@ -103,14 +118,14 @@ export function StatsChart() {
             }
             if (v0) {
                 let el = <circle cx={(i+0.5)*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>Song {songid}</title>
+                    <title>Song {songid}: {songCacheData[songid]?.title} - {artistsToString(songCacheData[songid]?.artists)} ({timeConversion(v0)})</title>
                 </circle>
                 flows.push(el)
             }
         }
     })
     console.log('size', size)
-    let svg = <svg viewBox={`0 0 ${size?.width}, ${size?.height}`}>
+    let svg = <svg viewBox={`0 0 ${size?.width || 1}, ${size?.height || 1}`}>
         {flows}
     </svg>
 
