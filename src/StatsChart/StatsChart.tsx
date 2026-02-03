@@ -15,6 +15,15 @@ export function StatsChart() {
     const [historyData, sethistoryData] = useState<SongHistoryStats[]>([])
     const [songCacheData, setSongCacheData] = useState<SongsMap>({})
     const [size, setSize] = useState<{ width: number; height: number } | null>(null)
+    const [cumulative, setCumulative] = useState(true)
+    const [normalize, setNormalize] = useState(false)
+    const [groupingDays, setGroupingDays] = useState(1)
+
+    const updateGroupingDays = (e: { target: { value: any; } }) => {
+        console.log('updateGroupingDays', e)
+        let num = parseInt(e.target.value)
+        if (num > 0) setGroupingDays(num)
+    }
 
     useLayoutEffect(() => {
         if (!svgRef.current) return
@@ -29,8 +38,9 @@ export function StatsChart() {
     }, [])
 
     const load = async () => {
-        let res = await (invoke("get_songs_history_cumulative", { from: -8, to: 0, limit: 12, step: 1 }) as Promise<SongHistoryStats[]>)
-        console.log('get_songs_history_cumulative', res)
+        let method = cumulative ? "get_songs_history_cumulative" : "get_songs_history"
+        let res = await (invoke(method, { from: -8, to: 0, limit: 12, step: groupingDays }) as Promise<SongHistoryStats[]>)
+        console.log(method, res)
         sethistoryData(res)
     }
     const loadSongsData = async () => {
@@ -44,10 +54,9 @@ export function StatsChart() {
             console.warn('No historyData')
         }
     }
-    useEffect(() => { load() }, [])
+    useEffect(() => { load() }, [cumulative, groupingDays])
     useEffect(() => { loadSongsData() }, [historyData])
 
-    let normalize = false
     let all_idx: number[] = []
     let dates: {date: String, max: number}[] = []
     let all_max = 0
@@ -83,7 +92,7 @@ export function StatsChart() {
     let colors = getPalette(all_idx.length)
     all_idx.sort()
     all_idx.forEach((songid: number, idx: number) => {
-        let color = colors[idx % colors.length]
+        let color = colors[songid % colors.length]
         let lst = historyData.filter((point: SongHistoryStats) => point.songid === songid)
         // console.log(`song:${songid} (color ${color})`, lst)
         for (let i = 0; i < dates.length - 1; i++) {
@@ -110,13 +119,14 @@ export function StatsChart() {
             } /* else if (v0) {
                 let el = <circle cx={i*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2"><title>Test</title></circle>
                 flows.push(el)
-            } */ else if (v1) {
+            } */
+           if (v1) {
                 let el = <circle cx={(i+1.5)*xspace} cy={(max1-v1)*yunit1} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>Song {songid}</title>
+                    <title>Song {songid}: {songCacheData[songid]?.title} - {artistsToString(songCacheData[songid]?.artists)} ({timeConversion(v1)})</title>
                 </circle>
                 flows.push(el)
             }
-            if (v0) {
+            if (v0 && i === 0) {
                 let el = <circle cx={(i+0.5)*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2">
                     <title>Song {songid}: {songCacheData[songid]?.title} - {artistsToString(songCacheData[songid]?.artists)} ({timeConversion(v0)})</title>
                 </circle>
@@ -130,8 +140,26 @@ export function StatsChart() {
     </svg>
 
     return (
-        <div className={classes.chart} ref={svgRef}>
-            {svg}
+        <div className={classes.chart}>
+            <div className={classes.controls}>
+                <label>
+                    <span>Cumulate</span><input type="checkbox" name="cumulative" checked={cumulative} onChange={() => setCumulative(!cumulative)} />
+                </label>
+                <label>
+                    <span>Normalize</span><input type="checkbox" name="normalize" checked={normalize} onChange={() => setNormalize(!normalize)} />
+                </label>
+                <label>Bucket size
+                    <input 
+                        type="number" 
+                        name="groupingDays" 
+                        value={groupingDays} 
+                        onChange={updateGroupingDays}
+                    />
+                </label>
+            </div>
+            <div className={classes.svgContainer} ref={svgRef}>
+                {svg}
+            </div>
         </div>
     )
 }
