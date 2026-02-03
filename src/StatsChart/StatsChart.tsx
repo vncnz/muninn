@@ -1,10 +1,8 @@
-// import { ArtistStat } from "../types";
-// import { timeConversion } from "../utils";
-import { JSX, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { SongHistoryStats, SongInfo } from "../types";
 import classes from "./StatsChart.module.scss";
 import { invoke } from "@tauri-apps/api/core";
-import { artistsToString, getPalette, timeConversion, timeToHuman } from "../utils";
+import { artistsToString, timeConversion } from "../utils";
 import { GraphData, GraphSerie, RoundedStepChart } from "../RoundedStepChart/RoundedStepChart";
 
 type SongsMap = Record<string, SongInfo>
@@ -12,11 +10,8 @@ type SerieMap = Record<string, GraphSerie>
 
 export function StatsChart() {
 
-    const svgRef = useRef<HTMLDivElement | null>(null)
-
     const [historyData, sethistoryData] = useState<SongHistoryStats[]>([])
     const [songCacheData, setSongCacheData] = useState<SongsMap>({})
-    const [size, setSize] = useState<{ width: number; height: number } | null>(null)
     const [cumulative, setCumulative] = useState(true)
     const [normalize, setNormalize] = useState(false)
     const [limit, setLimit] = useState(10)
@@ -32,18 +27,6 @@ export function StatsChart() {
         let num = parseInt(e.target.value)
         if (num > 9) setLimit(num)
     }
-
-    useLayoutEffect(() => {
-        if (!svgRef.current) return
-
-        const observer = new ResizeObserver(entries => {
-            const { width, height } = entries[0].contentRect
-            setSize({ width, height })
-        })
-
-        observer.observe(svgRef.current)
-        return () => observer.disconnect()
-    }, [])
 
     const load = async () => {
         let method = cumulative ? "get_songs_history_cumulative" : "get_songs_history"
@@ -65,101 +48,25 @@ export function StatsChart() {
     useEffect(() => { load() }, [cumulative, groupingDays, limit])
     useEffect(() => { loadSongsData() }, [historyData])
 
-    let all_idx: number[] = []
-    let dates: {date: String, max: number}[] = []
-    let all_max = 0
-    historyData.forEach((point: SongHistoryStats) => {
-        if (all_idx.indexOf(point.songid) < 0) all_idx.push(point.songid)
-        
-        let el = dates.find(dt => dt.date === point.date)
-        if (!el) {
-            el = {date: point.date, max: point.listened_time}
-            dates.push(el)
-        } else el.max = Math.max(el.max, point.listened_time)
-
-        all_max = Math.max(all_max, point.listened_time)
-    })
-
+    let uniqueDates = [...new Set(historyData.map(el => el.date))]
+    uniqueDates.sort() // Already sorted in database?
     let series: SerieMap = {}
     historyData.forEach((v: SongHistoryStats) => {
         if (!series[v.songid]) series[v.songid] = {
             dataToString: timeConversion,
             id: v.songid,
             label: songCacheData[v.songid] ? `${songCacheData[v.songid]?.title} - ${artistsToString(songCacheData[v.songid]?.artists)}` : 'Loading...',
-            points: new Array(dates.length).fill(null)
+            points: new Array(uniqueDates.length).fill(null)
         }
-        let idx = dates.findIndex(dt => dt.date === v.date)
+        let idx = uniqueDates.indexOf(v.date)
         series[v.songid].points[idx] = v.listened_time
     })
     let data: GraphData = {
         normalize,
-        labels: dates.map(el => el.date),
+        labels: uniqueDates,
         series: Object.values(series)
     }
     console.log('new structure', data)
-
-    let flows: JSX.Element[] = []
-
-    let xspace = (size?.width || 100) / dates.length
-    let yspace = size?.height || 100
-
-    let debug: { date: String; lst: String[]; }[] = []
-    dates.forEach((date: any) => {
-        let lst = historyData.filter(point => point.date === date)
-        lst.sort((a,b) => a.listened_time>b.listened_time ? 1 : -1)
-        debug.push({
-            date,
-            lst: lst.map(el => `${el.songid} (${el.listened_time})`)
-        })
-    })
-    console.log(debug)
-
-    let colors = getPalette(all_idx.length)
-    all_idx.sort()
-    all_idx.forEach((songid: number, idx: number) => {
-        let color = colors[songid % colors.length]
-        let lst = historyData.filter((point: SongHistoryStats) => point.songid === songid)
-        // console.log(`song:${songid} (color ${color})`, lst)
-        for (let i = 0; i < dates.length - 1; i++) {
-            let date0 = dates[i]
-            let date1 = dates[i+1]
-            let v0 = lst.find(point => point.date === date0.date)?.listened_time
-            let v1 = lst.find(point => point.date === date1.date)?.listened_time
-            // console.log(`songid:${songid} values ${v0} (${date0.date}) -> ${v1} (${date1.date})`)
-            let max0 = normalize ? date0.max : all_max
-            let max1 = normalize ? date1.max : all_max
-            let yunit0 = yspace / max0
-            let yunit1 = yspace / max1
-            if (v0 && v1) {
-                let x1 = (i+0.5)*xspace
-                let y1 = (max0-v0)*yunit0
-                let c1x = (i+1)*xspace
-                let c1y = (max0-v0)*yunit0
-                let c2x = (i+1)*xspace
-                let c2y = (max1-v1)*yunit1
-                let x2 = (i+1.5)*xspace
-                let y2 = (max1-v1)*yunit1
-                let el = <path d={`M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`} stroke={color} fill="transparent" strokeWidth="2" />
-                flows.push(el)
-            } /* else if (v0) {
-                let el = <circle cx={i*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2"><title>Test</title></circle>
-                flows.push(el)
-            } */
-           if (v1) {
-                let el = <circle cx={(i+1.5)*xspace} cy={(max1-v1)*yunit1} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>Song {songid}: {songCacheData[songid]?.title} - {artistsToString(songCacheData[songid]?.artists)} ({timeConversion(v1)})</title>
-                </circle>
-                flows.push(el)
-            }
-            if (v0 && i === 0) {
-                let el = <circle cx={(i+0.5)*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>Song {songid}: {songCacheData[songid]?.title} - {artistsToString(songCacheData[songid]?.artists)} ({timeConversion(v0)})</title>
-                </circle>
-                flows.push(el)
-            }
-        }
-    })
-    console.log('size', size)
 
     return (
         <div className={classes.chart}>
