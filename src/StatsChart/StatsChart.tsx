@@ -5,8 +5,10 @@ import { SongHistoryStats, SongInfo } from "../types";
 import classes from "./StatsChart.module.scss";
 import { invoke } from "@tauri-apps/api/core";
 import { artistsToString, getPalette, timeConversion, timeToHuman } from "../utils";
+import { GraphData, GraphSerie, RoundedStepChart } from "../RoundedStepChart/RoundedStepChart";
 
 type SongsMap = Record<string, SongInfo>
+type SerieMap = Record<string, GraphSerie>
 
 export function StatsChart() {
 
@@ -17,12 +19,18 @@ export function StatsChart() {
     const [size, setSize] = useState<{ width: number; height: number } | null>(null)
     const [cumulative, setCumulative] = useState(true)
     const [normalize, setNormalize] = useState(false)
+    const [limit, setLimit] = useState(10)
     const [groupingDays, setGroupingDays] = useState(1)
 
     const updateGroupingDays = (e: { target: { value: any; } }) => {
         console.log('updateGroupingDays', e)
         let num = parseInt(e.target.value)
         if (num > 0) setGroupingDays(num)
+    }
+    const updateLimit = (e: { target: { value: any; } }) => {
+        console.log('updateLimit', e)
+        let num = parseInt(e.target.value)
+        if (num > 9) setLimit(num)
     }
 
     useLayoutEffect(() => {
@@ -39,7 +47,7 @@ export function StatsChart() {
 
     const load = async () => {
         let method = cumulative ? "get_songs_history_cumulative" : "get_songs_history"
-        let res = await (invoke(method, { from: -8, to: 0, limit: 12, step: groupingDays }) as Promise<SongHistoryStats[]>)
+        let res = await (invoke(method, { from: -8, to: 0, limit, step: groupingDays }) as Promise<SongHistoryStats[]>)
         console.log(method, res)
         sethistoryData(res)
     }
@@ -54,7 +62,7 @@ export function StatsChart() {
             console.warn('No historyData')
         }
     }
-    useEffect(() => { load() }, [cumulative, groupingDays])
+    useEffect(() => { load() }, [cumulative, groupingDays, limit])
     useEffect(() => { loadSongsData() }, [historyData])
 
     let all_idx: number[] = []
@@ -72,11 +80,28 @@ export function StatsChart() {
         all_max = Math.max(all_max, point.listened_time)
     })
 
+    let series: SerieMap = {}
+    historyData.forEach((v: SongHistoryStats) => {
+        if (!series[v.songid]) series[v.songid] = {
+            dataToString: timeConversion,
+            id: v.songid,
+            label: songCacheData[v.songid] ? `${songCacheData[v.songid]?.title} - ${artistsToString(songCacheData[v.songid]?.artists)}` : 'Loading...',
+            points: new Array(dates.length).fill(null)
+        }
+        let idx = dates.findIndex(dt => dt.date === v.date)
+        series[v.songid].points[idx] = v.listened_time
+    })
+    let data: GraphData = {
+        normalize,
+        labels: dates.map(el => el.date),
+        series: Object.values(series)
+    }
+    console.log('new structure', data)
+
     let flows: JSX.Element[] = []
 
     let xspace = (size?.width || 100) / dates.length
     let yspace = size?.height || 100
-    // let colors = ['#f7737a', '#850dbf', '#c2fc37', '#d92d1f', '#49feff', '#11bb44', '#948f41']
 
     let debug: { date: String; lst: String[]; }[] = []
     dates.forEach((date: any) => {
@@ -135,9 +160,6 @@ export function StatsChart() {
         }
     })
     console.log('size', size)
-    let svg = <svg viewBox={`0 0 ${size?.width || 1}, ${size?.height || 1}`}>
-        {flows}
-    </svg>
 
     return (
         <div className={classes.chart}>
@@ -156,10 +178,16 @@ export function StatsChart() {
                         onChange={updateGroupingDays}
                     />
                 </label>
+                <label>Limit
+                    <input 
+                        type="number" 
+                        name="limit" 
+                        value={limit} 
+                        onChange={updateLimit}
+                    />
+                </label>
             </div>
-            <div className={classes.svgContainer} ref={svgRef}>
-                {svg}
-            </div>
+            <RoundedStepChart data={data} />
         </div>
     )
 }

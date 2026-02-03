@@ -4,16 +4,17 @@ import { JSX, useEffect, useLayoutEffect, useRef, useState } from "react";
 import classes from "./RoundedStepChart.module.scss";
 import { getPalette } from "../utils";
 
-interface GraphSerie {
+export interface GraphSerie {
     id: number;
     label: string;
     points: number[];
     dataToString: Function;
 }
 
-interface GraphData {
-  labels: string[];     // x axis
-  series: GraphSerie[]; // y axis
+export interface GraphData {
+    normalize: boolean,
+    labels: String[];     // x axis
+    series: GraphSerie[]; // y axis
 }
 
 export function RoundedStepChart({ data }: { data: GraphData }) {
@@ -24,7 +25,7 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
     // const [songCacheData, setSongCacheData] = useState<SongsMap>({})
     const [size, setSize] = useState<{ width: number; height: number } | null>(null)
     // const [cumulative, setCumulative] = useState(true)
-    const [normalize, setNormalize] = useState(false)
+    // const [normalize, setNormalize] = useState(false)
     // const [groupingDays, setGroupingDays] = useState(1)
 
     /* const updateGroupingDays = (e: { target: { value: any; } }) => {
@@ -66,8 +67,8 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
             let date1 = dates[i+1]
             let v0 = serie.points[i]
             let v1 = serie.points[i+1]
-            let max0 = normalize ? date0.max : all_max
-            let max1 = normalize ? date1.max : all_max
+            let max0 = data.normalize ? date0.max : all_max
+            let max1 = data.normalize ? date1.max : all_max
             let yunit0 = yspace / max0
             let yunit1 = yspace / max1
             if (v0 && v1) {
@@ -87,13 +88,13 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
             } */
            if (v1) {
                 let el = <circle cx={(i+1.5)*xspace} cy={(max1-v1)*yunit1} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>Song {serie.id}: {serie.dataToString(v1)}</title>
+                    <title>Song {serie.id}: {serie.label} ({serie.dataToString(v1)})</title>
                 </circle>
                 flows.push(el)
             }
             if (v0 && i === 0) {
                 let el = <circle cx={(i+0.5)*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>Song {serie.id}: {serie.dataToString(v0)}</title>
+                    <title>Song {serie.id}: {serie.label} ({serie.dataToString(v0)})</title>
                 </circle>
                 flows.push(el)
             }
@@ -105,15 +106,8 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
     </svg>
 
     return (
-        <div className={classes.chart}>
-            <div className={classes.controls}>
-                <label>
-                    <span>Normalize</span><input type="checkbox" name="normalize" checked={normalize} onChange={() => setNormalize(!normalize)} />
-                </label>
-            </div>
-            <div className={classes.svgContainer} ref={svgRef}>
-                {svg}
-            </div>
+        <div className={classes.svgContainer} ref={svgRef}>
+            {svg}
         </div>
     )
 }
