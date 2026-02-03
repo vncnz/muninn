@@ -11,7 +11,7 @@ pub struct StatsStore {
     conn: rusqlite::Connection,
 }
 
-const CURRENT_DB_VERSION: i32 = 7;
+const CURRENT_DB_VERSION: i32 = 9;
 impl StatsStore {
     pub fn new(app_dir: &Path) -> rusqlite::Result<Self> {
         // let conn = Connection::open_in_memory()?;
@@ -26,13 +26,21 @@ impl StatsStore {
         if version < CURRENT_DB_VERSION {
             println!("Upgrading database from version {} to {}", version, CURRENT_DB_VERSION);
             // destructive reset (early stage)
-            StatsStore::reset_database(&conn)?;
+            // StatsStore::reset_database(&conn)?;
             // StatsStore::recreate_database(&conn)?;
             /*
                 ALTER TABLE songs ADD COLUMN ignored INTEGER DEFAULT 0;
                 ALTER TABLE artists ADD COLUMN ignored INTEGER DEFAULT 0;
                 // So, I can add WHERE ignored = 0 in queries and ignore songs or artists chosen by the user
              */
+            if version < 7 {
+                StatsStore::recreate_database(&conn)?;
+                println!("Upgraded/created to v7");
+            }
+            if version < 9 {
+                StatsStore::apply9changes(&conn)?;
+                println!("Upgraded to v9");
+            }
             conn.execute(
                 &format!("PRAGMA user_version = {};", CURRENT_DB_VERSION),
                 [],
@@ -91,6 +99,25 @@ impl StatsStore {
                 CREATE INDEX idx_song_artists_artist ON song_artists(artist_id);
             "#
         )?;
+        Ok(())
+    }
+
+    fn apply9changes(conn: &Connection) -> rusqlite::Result<()> {
+        conn.execute_batch("
+            ALTER TABLE listening_days ADD COLUMN cumulative_seconds INTEGER DEFAULT 0;
+
+            CREATE INDEX IF NOT EXISTS idx_listening_days_query 
+            ON listening_days (song_id, day DESC);
+
+            -- Update existing rows
+            UPDATE listening_days AS ld
+            SET cumulative_seconds = (
+                SELECT SUM(seconds)
+                FROM listening_days AS inner_ld
+                WHERE inner_ld.song_id = ld.song_id 
+                AND inner_ld.day <= ld.day
+            );
+        ")?;
         Ok(())
     }
 
@@ -254,10 +281,20 @@ impl StatsStore {
 
         tx.execute(
             r#"
-                INSERT INTO listening_days (song_id, day, seconds)
-                VALUES (?, ?, ?)
-                ON CONFLICT(song_id, day)
-                DO UPDATE SET seconds = seconds + excluded.seconds;
+                INSERT INTO listening_days (song_id, day, seconds, cumulative_seconds)
+                SELECT 
+                    ?1, 
+                    ?2, 
+                    ?3, 
+                    ?3 + COALESCE((
+                        SELECT cumulative_seconds 
+                        FROM listening_days 
+                        WHERE song_id = ?1 AND day < ?2 
+                        ORDER BY day DESC LIMIT 1
+                    ), 0)
+                ON CONFLICT(song_id, day) DO UPDATE SET 
+                    seconds = listening_days.seconds + excluded.seconds,
+                    cumulative_seconds = listening_days.cumulative_seconds + excluded.seconds;
             "#,
             params![ songid, chrono::Utc::now().format("%Y-%m-%d").to_string(), time ],
         )?;
@@ -519,74 +556,69 @@ impl StatsStore {
     }
 
     pub fn get_songs_history_cumulative(&self, from: i32, to: i32, limit: i32, step: i32) -> Vec<SongHistoryStats> {
-        // let anchor = "1970-01-01"; // Per bucket alignment
+        let anchor = "1970-01-01"; // Per bucket alignment
+        let only_active = false;
+
+        let active_filter = if only_active {
+            "AND song_id IN (SELECT song_id FROM listening_days WHERE day >= date('now', '{from} days'))"
+        } else {
+            ""
+        };
 
         let mut results = Vec::new();
         let mut stmt = self.conn.prepare(&format!("
+            WITH RECURSIVE 
+                time_grid AS (
+                    SELECT date('{anchor}') AS bucket_start
+                    UNION ALL
+                    SELECT date(bucket_start, '+{step} days')
+                    FROM time_grid
+                    WHERE bucket_start < date('now', '{to} days', 'localtime')
+                ),
 
--- build all buckets
-WITH RECURSIVE buckets AS (
-    SELECT date('now', '{from} days', 'localtime') AS bucket
-    UNION ALL
-    SELECT date(bucket, '+{step} days')
-    FROM buckets
-    WHERE bucket < date('now', '{to} days', 'localtime')
-),
+                relevant_songs AS (
+                    SELECT DISTINCT song_id 
+                    FROM listening_days 
+                    WHERE day <= date('now', '{to} days', 'localtime') {active_filter}
+                ),
 
--- limit song pool for the query
-songs_universe AS (
-    SELECT DISTINCT song_id
-    FROM listening_days
-    WHERE day <= date('now', '{to} days', 'localtime')
-),
+                raw_cumulative AS (
+                    SELECT 
+                        tg.bucket_start AS bucket,
+                        s.song_id,
+                        (
+                            SELECT cumulative_seconds 
+                            FROM listening_days ld 
+                            WHERE ld.song_id = s.song_id 
+                            AND ld.day < date(tg.bucket_start, '+{step} days')
+                            ORDER BY ld.day DESC 
+                            LIMIT 1
+                        ) AS total_time
+                    FROM time_grid tg
+                    CROSS JOIN relevant_songs s
+                    WHERE tg.bucket_start BETWEEN date('now', '{from} days', 'localtime') 
+                                            AND date('now', '{to} days', 'localtime')
+                ),
 
--- put songs in buckets
-bucketed AS (
-    SELECT
-        b.bucket,
-        s.song_id,
-        COALESCE(SUM(ld.seconds), 0) AS bucket_seconds
-    FROM buckets b
-    CROSS JOIN songs_universe s
-    LEFT JOIN listening_days ld
-        ON ld.song_id = s.song_id
-       AND ld.day >= b.bucket
-       AND ld.day < date(b.bucket, '+{step} days')
-    GROUP BY b.bucket, s.song_id
-),
+                ranked AS (
+                    SELECT 
+                        bucket,
+                        song_id,
+                        COALESCE(total_time, 0) AS total_time,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY bucket 
+                            ORDER BY COALESCE(total_time, 0) DESC
+                        ) AS rnk
+                    FROM raw_cumulative
+                )
 
--- compute cumulative values
-cumulative AS (
-    SELECT
-        bucket,
-        song_id,
-        SUM(bucket_seconds) OVER (
-            PARTITION BY song_id
-            ORDER BY bucket
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ) AS cumulative_seconds
-    FROM bucketed
-),
-
--- rank songs
-ranked AS (
-    SELECT
-        bucket,
-        song_id,
-        cumulative_seconds,
-        ROW_NUMBER() OVER (
-            PARTITION BY bucket
-            ORDER BY cumulative_seconds DESC
-        ) AS rnk
-    FROM cumulative
-)
-
--- limit the number of results
-SELECT *
-FROM ranked
-WHERE rnk <= {limit}
-ORDER BY bucket, rnk;
-
+                SELECT 
+                bucket,
+                song_id,
+                total_time
+            FROM ranked
+            WHERE rnk <= {limit} AND total_time > 0
+            ORDER BY bucket ASC, total_time DESC;
         ")).expect("prepare ko");
         let songs = stmt.query_map([], |row| {
             Ok(SongHistoryStats {
