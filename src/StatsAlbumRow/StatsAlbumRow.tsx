@@ -4,7 +4,7 @@ import classes from "./StatsAlbumRow.module.scss";
 
 
 export function StatsAlbumRow({ album, max, idd }: { album: AlbumStat, max: number, idd: number }) {
-    console.log('artists', album.artists)
+    // console.log('artists', album.artists)
     return (
         <div className={classes.albumstatrow + ' id-' + idd}>
             <div className={classes.time}>

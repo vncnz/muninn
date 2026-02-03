@@ -47,6 +47,7 @@ export function StatsGeneric<T>({
     // let full = artistStats.reduce((acc: number, v: any) => acc + v.listened_time, 0)
     let max = stats.reduce((acc: number, v: T) => Math.max(acc, getValue(v)), 0)
 
+    console.log('StatsGeneric updated')
     return (
         <div className={classes.artistStats}>
             <div className={classes.controls}>
