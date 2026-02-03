@@ -73,7 +73,7 @@ function App() {
     // currentTab = <StatsSong playingId={song.metadata.id} />
     currentTab = <StatsGeneric<songStatTable>
       loadFn={loadSongStats}
-      Row={({ item, max, idd }) => <StatsSongRow song={item} max={max} idd={idd} />}
+      Row={({ item, max }) => <StatsSongRow song={item} max={max} idd={item.id} />}
       getValue={(a) => a.listened_time}
       refreshLabel="Refresh Song Stats"
       highlightId={song.metadata.id}
