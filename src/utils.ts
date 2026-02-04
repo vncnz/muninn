@@ -99,8 +99,8 @@ export const palette32 = [
 ];
 
 export const getPalette = (size: number) => {
-    if (size < 11) return palette10
-    if (size < 26) return palette25
+    // if (size < 11) return palette10
+    // if (size < 26) return palette25
     if (size < 33) return palette32
     let arr = palette32
     let i = 32
