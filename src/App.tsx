@@ -67,6 +67,14 @@ function App() {
     []
   )
 
+  const filterSongs = (item: songStatTable, query: string) => {
+    return item.title.toLowerCase().indexOf(query) > -1 ||
+           item.album.toLowerCase().indexOf(query) > -1 ||
+           item.artists.some(a => a.name.toLowerCase().indexOf(query) > -1)
+  }
+  const filterArtists = (item: ArtistStat, query: string) => {
+    return item.name.toLowerCase().indexOf(query) > -1
+  }
 
   let currentTab = null
   if (groupType == 'song') {
@@ -78,6 +86,7 @@ function App() {
       refreshLabel="Refresh Song Stats"
       highlightId={song.metadata.id}
       key='song'
+      filterFunction={filterSongs}
     />
   } else if (groupType == 'artist') {
     currentTab = <StatsGeneric<ArtistStat>
@@ -86,6 +95,7 @@ function App() {
       getValue={(a) => a.listened_time}
       refreshLabel="Refresh Artist Stats"
       key='artist'
+      filterFunction={filterArtists}
     />
   } else if (groupType == 'album') {
     currentTab = <StatsGeneric<AlbumStat>

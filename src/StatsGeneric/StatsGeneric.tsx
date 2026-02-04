@@ -1,12 +1,15 @@
 import classes from "./StatsGeneric.module.scss";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+// const filterDummy = (item: any, query: string) => true
 
 type StatsGenericProps<T> = {
   loadFn: (from: number, to: number, limit: number) => Promise<T[]>
   Row: React.ComponentType<{ item: T; max: number; idd: number }>
   getValue: (item: T) => number
   refreshLabel?: string
-  highlightId?: number|undefined
+  highlightId?: number|undefined,
+  filterFunction?: (item: T, query: string) => boolean
 }
 
 // T is ArtistStat, for example
@@ -17,12 +20,14 @@ export function StatsGeneric<T>({
   Row,
   getValue,
   refreshLabel = "Refresh",
-  highlightId = undefined
+  highlightId = undefined,
+  filterFunction = undefined
 }: StatsGenericProps<T>) {
     const forever = -1000000
     const [stats, setStats] = useState<T[]>([])
     const [period, setPeriod] = useState(forever)
     const [topLimit, setTopLimit] = useState(25)
+    const [search, setSearch] = useState('')
 
     const load = async () => {
         const s = await loadFn(period, 0, topLimit)
@@ -43,6 +48,10 @@ export function StatsGeneric<T>({
         //    console.log('Playing song not found in list', highlightId)
         // }
     }
+
+    const filteredItems = useMemo(() => {
+        return stats.filter(el => filterFunction ? filterFunction(el, search) : true)
+    }, [stats, search, filterFunction])
 
     // let full = artistStats.reduce((acc: number, v: any) => acc + v.listened_time, 0)
     let max = stats.reduce((acc: number, v: T) => Math.max(acc, getValue(v)), 0)
@@ -67,9 +76,10 @@ export function StatsGeneric<T>({
                     <a onClick={() => setTopLimit(50)} className={classes.trSelector + (topLimit === 50 ? (' '+classes.trActive) : '')}>Top50</a>
                     <a onClick={() => setTopLimit(100)} className={classes.trSelector + (topLimit === 100 ? (' '+classes.trActive) : '')}>Top100</a>
                 </span>
+                {filterFunction ? <input type="text" placeholder="Filter" value={search} onChange={e => {setSearch(e.target.value)}} /> : null}
             </div>
             <div className={classes.lst}>
-                {stats.map((item, i) =>
+                {filteredItems.map((item, i) =>
                     <Row key={i} item={item} max={max} idd={i} />
                 )}
             </div>
