@@ -115,7 +115,7 @@ function App() {
       </div>
 
       <div className="stats-section">
-        <button onClick={() => { setShowHistory(!showHistory) }}>Show/hide history</button>
+        <button className="toggle-graph-button" onClick={() => { setShowHistory(!showHistory) }}>{showHistory ? '✕' : '∑'}</button>
         <div className="stats-type-selector">
           <a onClick={() => { selectTab('song') }} className={groupType === 'song' ? 'active' : ''}>By song</a>
           <a onClick={() => { selectTab('artist') }} className={groupType === 'artist' ? 'active' : ''}>By artist</a>

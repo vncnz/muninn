@@ -72,6 +72,25 @@
   }
 }
 
+.toggle-graph-button {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1000;
+  color: var(--primary);
+  border-radius: 0;
+  border-bottom-left-radius: 1rem;
+  border: 1px solid var(--primary);
+  border-top: none;
+  border-right: none;
+  background-color: var(--background-color);
+}
+.toggle-graph-button:hover {
+  color: var(--secondary);
+  border-color: var(--secondary);
+  cursor: pointer;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
