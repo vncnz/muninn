@@ -13,6 +13,11 @@ export const artistsToString = (artists: Artist[]) => {
     }
 }
 
+export function dateToHuman (dateString: string) {
+  const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" }
+  return new Date(dateString).toLocaleDateString(undefined, options)
+}
+
 export function timeToHuman (time: number) {
     let m = Math.floor(time / 60)
     let mins = m > 9 ? m : ('0' + m)
