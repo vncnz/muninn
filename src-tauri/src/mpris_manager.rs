@@ -160,17 +160,25 @@ pub struct SongStats {
 }
 
 pub struct MprisManager {
+    shared_store: std::sync::Arc<std::sync::Mutex<crate::database::StatsStore>>
     // pub stats: HashMap<String, SongStats>
 }
 
+/* impl Drop for MprisManager {
+    fn drop(&mut self) {
+        eprintln!("DROP!");
+    }
+} */
+
 impl MprisManager {
-    pub fn new () -> MprisManager {
+    pub fn new (shared_store: SharedStore) -> MprisManager {
         MprisManager {
             // stats: HashMap::new()
+            shared_store
         }
     }
 
-    pub fn start_listening (&mut self, shared_store: SharedStore, app: AppHandle) {
+    pub fn start_listening (&mut self, app: AppHandle) {
         // let _ = app.emit("mpris-event", msg);
 
         // let mut last_active_player: String = String::new();
@@ -222,6 +230,11 @@ impl MprisManager {
             }
 
             let Some(active_player) = active else {
+                if cumulative_time > 0.0 {
+                    let mut store = self.shared_store.lock().expect("StatsStore poisoned");
+                    store.increase_time(current.as_ref().unwrap().id.unwrap(), cumulative_time).expect("Impossible to update time");
+                    cumulative_time = 0.0;
+                }
                 continue;
             };
 
@@ -248,12 +261,12 @@ impl MprisManager {
 
             if current.is_none() || current.as_ref().unwrap().hash != track_hash {
                 if current.is_some() {
-                    let mut store = shared_store.lock().expect("StatsStore poisoned");
+                    let mut store = self.shared_store.lock().expect("StatsStore poisoned");
                     eprintln!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().hash, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
                     store.increase_time(current.as_ref().unwrap().id.unwrap(), cumulative_time).expect("Impossible to update time");
                 }
                 let on_database: Option<Song> = {
-                    let store = shared_store.lock().expect("StatsStore poisoned");
+                    let store = self.shared_store.lock().expect("StatsStore poisoned");
                     // println!("Looking for track hash {:?} ({}) in database", track_hash, track_hash.len());
                     if let Ok(opt_song) = store.get_song_by_hash(&track_hash) {
                         if let Some(song) = opt_song {
@@ -274,7 +287,7 @@ impl MprisManager {
                 } else {
                     current = Song::new(track_key.clone());
                     if current.is_some() {
-                        let mut store = shared_store.lock().expect("StatsStore poisoned");
+                        let mut store = self.shared_store.lock().expect("StatsStore poisoned");
                         println!("Inserting new track {:?} ({}) into database", current.as_ref().unwrap().hash, current.as_ref().unwrap().hash.len());
                         current = Some(store.insert_song(current.as_ref().unwrap()).expect("Impossible to insert song"));
                     } else {
@@ -294,7 +307,7 @@ impl MprisManager {
                     let len_secs = ((length as f64) / 1000.0 / 1000.0) as i32;
                     if len_secs <= 86_400 {
                         let mut c = current.clone().unwrap();
-                        let mut store = shared_store.lock().expect("StatsStore poisoned");
+                        let mut store = self.shared_store.lock().expect("StatsStore poisoned");
                         if store.fix_song_length(c.id.unwrap(), len_secs).is_ok() {
                             println!("Fixed length {len_secs} for song {:?}", c.id);
                             c.length = len_secs;

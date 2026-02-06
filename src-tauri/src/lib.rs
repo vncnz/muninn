@@ -9,6 +9,12 @@ use std::sync::{RwLock};
 type SharedStats = Arc<RwLock<HashMap<String, SongStats>>>;
 type SharedStore = Arc<Mutex<StatsStore>>;
 
+/* impl Drop for StatsStore {
+    fn drop(&mut self) {
+        eprintln!("DROP2");
+    }
+} */
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn get_stats(state: tauri::State<'_, SharedStats>) -> Result<HashMap<String, SongStats>, String> {
@@ -60,7 +66,6 @@ fn get_songs_by_id(store: tauri::State<'_, SharedStore>, idx: Vec<i32>) -> Resul
     Ok(results)
 }
 
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -79,24 +84,21 @@ pub fn run() {
             let db_path = data_dir.join("stats.sqlite");
             println!("Database path: {:?}", db_path);
 
-            // let stats: SharedStats = Arc::new(RwLock::new(HashMap::new()));
             let store: SharedStore = Arc::new(Mutex::new(StatsStore::new(&db_path).expect("Impossible to create database")));
 
             // Register as global state
-            // app.manage(stats.clone());
             app.manage(store.clone());
 
             // let stats_clone = stats.clone();
 
             // Background listener
             std::thread::spawn(move || {
-                MprisManager::new().start_listening(store, app_handle);
+                MprisManager::new(store).start_listening(app_handle);
             });
 
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        // .invoke_handler(tauri::generate_handler![get_stats_all])
         .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_songs_history_cumulative, get_songs_by_id])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
