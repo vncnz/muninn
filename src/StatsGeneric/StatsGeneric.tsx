@@ -35,7 +35,7 @@ export function StatsGeneric<T>({
         console.log('updated stats', s)
     }
 
-    useEffect(() => { load(); }, [period, topLimit]);
+    useEffect(() => { load(); }, [period, topLimit, highlightId]);
 
     const scrollToHighlight = () => {
         if (highlightId === undefined) return;
