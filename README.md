@@ -32,13 +32,16 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - ~~Add time ranges (today, 7d, 30d, all)~~
 - ~~Stats by album~~
 - ~~Song length update when wrong in the first mpris event~~
+- Make filters resistent to stats type change
+- Flush current song when closing app
+- Add history graph for artists
 - Exclude plays without an artist
 - Limit stats refresh during music listening
 - Add search feature (by title, by artist, etc.)
-- Add filter feature (by title, by artist, etc.)
+- ~~Add filter feature (by title, by artist, etc.)~~
 - ~~Limit number of results shown in stats (top 10, top 25, top 50, something like that)~~
-- Collapse songs belonging to multiple albums when reading statistics from the database
-- Add comparisons between different time ranges stats (current vs previous)
+- Collapse songs belonging to multiple albums when reading statistics from the database?
+- Add comparisons between different time ranges stats (current vs previous)? (partially replaced by history charts?)
 - Add the ability to reset a song counter or ignore a song/artist
 - Add the ability to merge one song listening time into another
 
