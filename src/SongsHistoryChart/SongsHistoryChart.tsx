@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { SongHistoryStats, SongInfo } from "../types";
-import classes from "./StatsChart.module.scss";
+import classes from "./SongsHistoryChart.module.scss";
 import { invoke } from "@tauri-apps/api/core";
 import { artistsToString, timeConversion } from "../utils";
 import { GraphData, GraphSerie, RoundedStepChart } from "../RoundedStepChart/RoundedStepChart";
@@ -8,7 +8,7 @@ import { GraphData, GraphSerie, RoundedStepChart } from "../RoundedStepChart/Rou
 type SongsMap = Record<string, SongInfo>
 type SerieMap = Record<string, GraphSerie>
 
-export function StatsChart() {
+export function SongsHistoryChart() {
 
     const [historyData, sethistoryData] = useState<SongHistoryStats[]>([])
     const [songCacheData, setSongCacheData] = useState<SongsMap>({})
