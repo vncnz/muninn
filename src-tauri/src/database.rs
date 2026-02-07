@@ -3,7 +3,7 @@ use std::path::Path;
 use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
 
-use crate::mpris_manager::{AlbumStats, Artist, ArtistStats, Song, SongHistoryStats};
+use crate::mpris_manager::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, Song, SongHistoryStats};
 
 use chrono;
 
@@ -555,6 +555,61 @@ impl StatsStore {
         results
     }
 
+    pub fn get_artists_history(&self, from: i32, to: i32, limit: i32, step: i32) -> Vec<ArtistHistoryStats> {
+        let anchor = "1970-01-01"; // Per bucket alignment
+
+        let mut results = Vec::new();
+        let mut stmt = self.conn.prepare(&format!("
+WITH bucketed AS (
+    SELECT
+        date(
+            ld.day,
+            '-' || ((julianday(ld.day) - julianday('{anchor}')) % {step}) || ' days'
+        ) AS bucket,
+        sa.artist_id,
+        SUM(ld.seconds) AS listened_time
+    FROM listening_days ld
+    JOIN song_artists sa ON ld.song_id = sa.song_id
+    WHERE ld.day BETWEEN date('now', '{from} days', 'localtime')
+                 AND date('now', '{to} days', 'localtime')
+    GROUP BY bucket, sa.artist_id
+),
+ranked AS (
+    SELECT
+        bucket,
+        artist_id,
+        listened_time,
+        ROW_NUMBER() OVER (
+            PARTITION BY bucket
+            ORDER BY listened_time DESC
+        ) AS rnk
+    FROM bucketed
+)
+SELECT
+    r.bucket,
+    r.artist_id,
+    a.name AS artist_name,
+    r.listened_time
+FROM ranked r
+JOIN artists a ON r.artist_id = a.id
+WHERE r.rnk <= {limit}
+ORDER BY r.bucket ASC, r.listened_time DESC;
+        ")).expect("prepare ko");
+        let artists = stmt.query_map([], |row| {
+            Ok(ArtistHistoryStats {
+                date: row.get(0).expect("Date in query"),
+                artistid: row.get(1).expect("ArtistId in query"),
+                artistname: row.get(2).expect("ArtistName in query"),
+                listened_time: row.get(3).expect("listened_time in query")
+            })
+        });
+
+        if let Ok(artists_iter) = artists {
+            results.extend(artists_iter.flatten());
+        }
+        results
+    }
+
     pub fn get_songs_history_cumulative(&self, from: i32, to: i32, limit: i32, step: i32) -> Vec<SongHistoryStats> {
         let anchor = "1970-01-01"; // Per bucket alignment
         let only_active = false;
@@ -631,6 +686,98 @@ impl StatsStore {
         if let Ok(songs) = songs {
             for song in songs {
                 if let Ok(s) = song {
+                    results.push(s);
+                }
+            }
+        }
+        results
+    }
+
+    pub fn get_artists_history_cumulative(&self, from: i32, to: i32, limit: i32, step: i32) -> Vec<ArtistHistoryStats> {
+        let anchor = "1970-01-01"; // Per bucket alignment
+        let only_active = false;
+
+        let active_filter = if only_active {
+            "AND song_id IN (SELECT song_id FROM listening_days WHERE day >= date('now', '{from} days'))"
+        } else {
+            ""
+        };
+
+        let mut results = Vec::new();
+        let mut stmt = self.conn.prepare(&format!("
+WITH RECURSIVE 
+
+    time_grid AS (
+        SELECT date('{anchor}') AS bucket_start
+        UNION ALL
+        SELECT date(bucket_start, '+{step} days')
+        FROM time_grid
+        WHERE bucket_start < date('now', '{to} days', 'localtime')
+    ),
+
+    relevant_artists AS (
+        SELECT DISTINCT sa.artist_id 
+        FROM song_artists sa
+        JOIN listening_days ld ON sa.song_id = ld.song_id
+        WHERE ld.day <= date('now', '{to} days', 'localtime') {active_filter}
+    ),
+
+    artist_data AS (
+        SELECT 
+            tg.bucket_start AS bucket,
+            ra.artist_id,
+            (
+                SELECT SUM(last_song_totals.max_cum)
+                FROM (
+                    SELECT MAX(ld.cumulative_seconds) as max_cum
+                    FROM listening_days ld
+                    JOIN song_artists sa ON ld.song_id = sa.song_id
+                    WHERE sa.artist_id = ra.artist_id
+                      AND ld.day < date(tg.bucket_start, '+{step} days')
+                    GROUP BY ld.song_id
+                ) AS last_song_totals
+            ) AS total_time
+        FROM time_grid tg
+        CROSS JOIN relevant_artists ra
+        WHERE tg.bucket_start BETWEEN date('now', '{from} days', 'localtime') 
+                                 AND date('now', '{to} days', 'localtime')
+    ),
+
+    ranked AS (
+        SELECT 
+            ad.bucket,
+            ad.artist_id,
+            a.name AS artist_name,
+            COALESCE(ad.total_time, 0) AS total_time,
+            ROW_NUMBER() OVER (
+                PARTITION BY ad.bucket 
+                ORDER BY COALESCE(ad.total_time, 0) DESC
+            ) AS rnk
+        FROM artist_data ad
+        JOIN artists a ON ad.artist_id = a.id
+    )
+
+SELECT 
+    bucket,
+    artist_id,
+    artist_name,
+    total_time
+FROM ranked
+WHERE rnk <= {limit} AND total_time > 0
+ORDER BY bucket ASC, total_time DESC;
+        ")).expect("prepare ko");
+        let artists = stmt.query_map([], |row| {
+            Ok(ArtistHistoryStats {
+                date: row.get(0).expect("Date in query"),
+                artistid: row.get(1).expect("ArtistId in query"),
+                artistname: row.get(2).expect("ArtistName in query"),
+                listened_time: row.get(3).expect("listened_time in query")
+            })
+        });
+
+        if let Ok(artists) = artists {
+            for artist in artists {
+                if let Ok(s) = artist {
                     results.push(s);
                 }
             }

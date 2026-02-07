@@ -38,6 +38,14 @@ pub struct SongHistoryStats {
 }
 
 #[derive(Serialize, Clone, Debug)]
+pub struct ArtistHistoryStats {
+    pub date: String,
+    pub artistid: i32,
+    pub artistname: String,
+    pub listened_time: f64
+}
+
+#[derive(Serialize, Clone, Debug)]
 pub struct Song {
     pub id: Option<i32>,
     pub hash: String,

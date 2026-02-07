@@ -1,7 +1,7 @@
 mod mpris_manager;
 mod database;
 use std::{sync::{Arc, Mutex}};
-use crate::{database::StatsStore, mpris_manager::{AlbumStats, ArtistStats, MprisManager, Song, SongHistoryStats, SongStats}};
+use crate::{database::StatsStore, mpris_manager::{AlbumStats, ArtistHistoryStats, ArtistStats, MprisManager, Song, SongHistoryStats, SongStats}};
 use std::collections::HashMap;
 use tauri::{Manager};
 use std::sync::{RwLock};
@@ -49,9 +49,20 @@ fn get_songs_history(store: tauri::State<'_, SharedStore>, from: i32, to: i32, l
     Ok(store.get_songs_history(from, to, limit, step))
 }
 #[tauri::command]
+fn get_artists_history(store: tauri::State<'_, SharedStore>, from: i32, to: i32, limit: i32, step: i32) -> Result<Vec<ArtistHistoryStats>, String> {
+    let store = store.lock().expect("StatsStore poisoned");
+    Ok(store.get_artists_history(from, to, limit, step))
+}
+#[tauri::command]
 fn get_songs_history_cumulative(store: tauri::State<'_, SharedStore>, from: i32, to: i32, limit: i32, step: i32) -> Result<Vec<SongHistoryStats>, String> {
     let store = store.lock().expect("StatsStore poisoned");
     Ok(store.get_songs_history_cumulative(from, to, limit, step))
+}
+
+#[tauri::command]
+fn get_artists_history_cumulative(store: tauri::State<'_, SharedStore>, from: i32, to: i32, limit: i32, step: i32) -> Result<Vec<ArtistHistoryStats>, String> {
+    let store = store.lock().expect("StatsStore poisoned");
+    Ok(store.get_artists_history_cumulative(from, to, limit, step))
 }
 
 #[tauri::command]
@@ -99,7 +110,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_songs_history_cumulative, get_songs_by_id])
+        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_artists_history, get_songs_history_cumulative, get_songs_by_id, get_artists_history_cumulative])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
