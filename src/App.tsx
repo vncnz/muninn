@@ -10,10 +10,14 @@ import { invoke } from "@tauri-apps/api/core";
 import { StatsAlbumRow } from "./StatsAlbumRow/StatsAlbumRow";
 import { StatsSongRow } from "./StatsSongRow/StatsSongRow";
 import { SongsHistoryChart } from "./SongsHistoryChart/SongsHistoryChart";
+import { ArtistsHistoryChart } from "./ArtistsHistoryChart/ArtistsHistoryChart";
 import React from "react";
 
 let SongsHistoryChartMemorized = React.memo(() => {
-  return <SongsHistoryChart key='history' />
+  return <SongsHistoryChart key='historyS' />
+})
+let ArtistsHistoryChartMemorized = React.memo(() => {
+  return <ArtistsHistoryChart key='historyA' />
 })
 
 function App() {
@@ -23,7 +27,7 @@ function App() {
   } as SongPlaying);
 
   const [groupType, setGroupType] = useState('song')
-  const [showHistory, setShowHistory] = useState(true)
+  const [showHistory, setShowHistory] = useState<null|'songs'|'artists'>('songs')
 
   
   useEffect(() => {
@@ -44,6 +48,12 @@ function App() {
       unlisten.then((fn) => fn());
     };
   }, []); // empty dependency array -> run once
+
+  function nextHistory () {
+    if (!showHistory) setShowHistory('songs')
+    else if (showHistory === 'songs') setShowHistory('artists')
+    else setShowHistory(null)
+  }
   
   function selectTab(type: string) {
     setGroupType(type)
@@ -107,15 +117,19 @@ function App() {
     />
   }
 
+  let hist = null
+  if (showHistory === 'songs') hist = <SongsHistoryChartMemorized key='historyS' />
+  if (showHistory === 'artists') hist = <ArtistsHistoryChartMemorized key='historyA' />
+
   return (
     <main className="container">
-      { showHistory ? <SongsHistoryChartMemorized key='history' /> : null }
+      { hist }
       <div className={"playing-info"}>
         <Playing playing={song} />
       </div>
 
       <div className="stats-section">
-        <button className="toggle-graph-button" onClick={() => { setShowHistory(!showHistory) }}>{showHistory ? '✕' : '∑'}</button>
+        <button className="toggle-graph-button" onClick={() => {nextHistory()}}>{showHistory ? '✕' : '∑'}</button>
         <div className="stats-type-selector">
           <a onClick={() => { selectTab('song') }} className={groupType === 'song' ? 'active' : ''}>By song</a>
           <a onClick={() => { selectTab('artist') }} className={groupType === 'artist' ? 'active' : ''}>By artist</a>

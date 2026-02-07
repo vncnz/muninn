@@ -56,3 +56,9 @@ export type SongHistoryStats = {
     songid: number,
     listened_time: number
 }
+export type ArtistHistoryStats = {
+    date: String,
+    artistid: number,
+    artistname: string,
+    listened_time: number
+}

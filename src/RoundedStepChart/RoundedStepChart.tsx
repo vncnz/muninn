@@ -88,13 +88,13 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
             } */
            if (v1) {
                 let el = <circle cx={(i+1.5)*xspace} cy={(max1-v1)*yunit1} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>Song {serie.id}: {serie.label} ({serie.dataToString(v1)}, {dateToHuman(date1.date as string)})</title>
+                    <title>(id {serie.id}) {serie.label} ({serie.dataToString(v1)}, {dateToHuman(date1.date as string)})</title>
                 </circle>
                 flows.push(el)
             }
             if (v0 && i === 0) {
                 let el = <circle cx={(i+0.5)*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>Song {serie.id}: {serie.label} ({serie.dataToString(v0)}, {dateToHuman(date0.date as string)})</title>
+                    <title>(id {serie.id}) {serie.label} ({serie.dataToString(v0)}, {dateToHuman(date0.date as string)})</title>
                 </circle>
                 flows.push(el)
             }
