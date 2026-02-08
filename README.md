@@ -32,6 +32,7 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - ~~Add time ranges (today, 7d, 30d, all)~~
 - ~~Stats by album~~
 - ~~Song length update when wrong in the first mpris event~~
+- New layout (see below)
 - Make filters resistent to stats type change
 - Flush current song when closing app
 - Add history graph for artists
@@ -44,6 +45,10 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - Add comparisons between different time ranges stats (current vs previous)? (partially replaced by history charts?)
 - Add the ability to reset a song counter or ignore a song/artist
 - Add the ability to merge one song listening time into another
+
+### New layout (TODO)
+- Tabs for mode selection: one view if using halfscreen, two views if using fullscreen
+- Three available views: lyrics, rankings, history graphs
 
 ## Recommended IDE Setup
 
