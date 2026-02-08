@@ -72,13 +72,13 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
             let yunit0 = yspace / max0
             let yunit1 = yspace / max1
             if (v0 && v1) {
-                let x1 = (i+0.5)*xspace
+                let x1 = (i+0.5)*xspace + 6
                 let y1 = (max0-v0)*yunit0
                 let c1x = (i+1)*xspace
                 let c1y = (max0-v0)*yunit0
                 let c2x = (i+1)*xspace
                 let c2y = (max1-v1)*yunit1
-                let x2 = (i+1.5)*xspace
+                let x2 = (i+1.5)*xspace - 6
                 let y2 = (max1-v1)*yunit1
                 let el = <path d={`M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`} stroke={color} fill="transparent" strokeWidth="2" />
                 flows.push(el)
