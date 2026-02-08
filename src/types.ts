@@ -62,3 +62,24 @@ export type ArtistHistoryStats = {
     artistname: string,
     listened_time: number
 }
+
+export type LyricsResponse = {
+    albumName: string,
+    artistName: string,
+    duration: number,
+    id: number,
+    instrumental: boolean,
+    name: string,
+    // plainLyrics: "Lo sai che ti amo↵Ma a volte è difficile sai?↵Io mi perdo, mi strappo↵E arriviamo sempre allo stesso punto↵Sono le nove e fuori piove↵I…"
+    // plainLyrics: LyricsRow[],
+    // syncedLyrics: "[00:05.76] Lo sai che ti amo↵[00:07.87] Ma a volte è difficile sai?↵[00:12.67] Io mi perdo, mi strappo↵[00:16.93] E arriviamo sempre all…"
+    lyrics: LyricsRow[],
+    lyricsIsTimed: boolean,
+    trackName: string,
+    errorMessage: string|null
+}
+
+export type LyricsRow = {
+    time: number,
+    text: String
+}

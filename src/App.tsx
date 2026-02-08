@@ -12,6 +12,7 @@ import { StatsSongRow } from "./StatsSongRow/StatsSongRow";
 import { SongsHistoryChart } from "./SongsHistoryChart/SongsHistoryChart";
 import { ArtistsHistoryChart } from "./ArtistsHistoryChart/ArtistsHistoryChart";
 import React from "react";
+import { LyricsProvider } from "./providers/LyricsProvider";
 
 let SongsHistoryChartMemorized = React.memo(() => {
   return <SongsHistoryChart key='historyS' />
@@ -138,7 +139,9 @@ function App() {
         {currentTab}
       </div>
       <div className="lyrics-section">
-        <Lyrics playing={song} />
+        <LyricsProvider>
+          <Lyrics playing={song} />
+        </LyricsProvider>
       </div>
     </main>
   );
