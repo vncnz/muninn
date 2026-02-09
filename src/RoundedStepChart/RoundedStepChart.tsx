@@ -67,8 +67,8 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
             let date1 = dates[i+1]
             let v0 = serie.points[i]
             let v1 = serie.points[i+1]
-            let max0 = data.normalize ? date0.max : all_max
-            let max1 = data.normalize ? date1.max : all_max
+            let max0 = (data.normalize ? date0.max : all_max)*1.01
+            let max1 = (data.normalize ? date1.max : all_max)*1.01
             let yunit0 = yspace / max0
             let yunit1 = yspace / max1
             if (v0 && v1) {
