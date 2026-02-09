@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 
 export function Lyrics({ playing }: { playing: SongPlaying }) {
     // const [lyricsData, setLyricsData] = useState(null as LyricsResponse | null)
-    const [loading, setLoading] = useState(false)
+    // const [loading, setLoading] = useState(false)
     // const [lastLoaded, setLastLoaded] = useState<String|null>(null)
     const [lastSelectedRowIdx, setLastSelectedRowIdx] = useState(-1)
 
@@ -46,7 +46,7 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
         return () => { cancelled = true; };
     }, [playing]); */
 
-    const { lyrics, loadLyrics } = useLyrics();
+    const { lyrics, loading, loadLyrics } = useLyrics();
 
     useEffect(() => {
         loadLyrics(playing);

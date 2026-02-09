@@ -16,6 +16,8 @@ export function SongsHistoryChart() {
     const [normalize, setNormalize] = useState(false)
     const [limit, setLimit] = useState(10)
     const [groupingDays, setGroupingDays] = useState(1)
+    const [from, setFrom] = useState(-10)
+    const [to, setTo] = useState(0)
 
     const updateGroupingDays = (e: { target: { value: any; } }) => {
         console.log('updateGroupingDays', e)
@@ -30,7 +32,7 @@ export function SongsHistoryChart() {
 
     const load = async () => {
         let method = cumulative ? "get_songs_history_cumulative" : "get_songs_history"
-        let res = await (invoke(method, { from: -8, to: 0, limit, step: groupingDays }) as Promise<SongHistoryStats[]>)
+        let res = await (invoke(method, { from, to, limit, step: groupingDays }) as Promise<SongHistoryStats[]>)
         console.log(method, res)
         sethistoryData(res)
     }
@@ -45,7 +47,7 @@ export function SongsHistoryChart() {
             console.warn('No historyData')
         }
     }
-    useEffect(() => { load() }, [cumulative, groupingDays, limit])
+    useEffect(() => { load() }, [cumulative, groupingDays, limit, from, to])
     useEffect(() => { loadSongsData() }, [historyData])
 
     let uniqueDates = [...new Set(historyData.map(el => el.date))]
@@ -67,6 +69,16 @@ export function SongsHistoryChart() {
         series: Object.values(series)
     }
     console.log('new structure', data)
+
+    let changeFrom = (diff: number) => { if (from+diff < to) setFrom(from+diff) }
+    let tmp = new Date()
+    tmp.setDate(tmp.getDate() + from)
+    let fromDate = tmp.toDateString()
+
+    let changeTo = (diff: number) => { let newTo = Math.min(Math.max(from+1, to+diff), 0); if (newTo != to) setTo(newTo) }
+    tmp = new Date()
+    tmp.setDate(tmp.getDate() + to)
+    let toDate = tmp.toDateString()
 
     return (
         <div className={classes.chart}>
@@ -95,6 +107,26 @@ export function SongsHistoryChart() {
                 </label>
             </div>
             <RoundedStepChart data={data} />
+            <div className={classes.periodControl}>
+                <div>
+                    {fromDate}
+                    <div className={classes.movs}>
+                        <a onClick={() => { changeFrom(-10) }}>-10</a>
+                        <a onClick={() => { changeFrom(-1) }}>-1</a>
+                        <a onClick={() => { changeFrom(1) }}>+1</a>
+                        <a onClick={() => { changeFrom(10) }}>+10</a>
+                    </div>
+                </div>
+                <div>
+                    {toDate}
+                    <div className={classes.movs}>
+                        <a onClick={() => { changeTo(-10) }}>-10</a>
+                        <a onClick={() => { changeTo(-1) }}>-1</a>
+                        <a onClick={() => { changeTo(1) }}>+1</a>
+                        <a onClick={() => { changeTo(10) }}>+10</a>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }

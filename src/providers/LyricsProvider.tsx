@@ -6,6 +6,7 @@ import { createContext, useContext } from "react"
 
 type LyricsContextValue = {
   lyrics: LyricsResponse | null
+  loading: boolean
   loadLyrics: (song: SongPlaying) => Promise<LyricsResponse | null>
 }
 
@@ -57,6 +58,7 @@ const fetchLyrics = async (song: SongPlaying): Promise<LyricsResponse | null> =>
 
 export function LyricsProvider({ children }: { children: React.ReactNode }) {
   const [lyrics, setLyrics] = useState<LyricsResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const cacheRef = useRef<Map<number, LyricsResponse>>(new Map());
 
@@ -71,8 +73,12 @@ export function LyricsProvider({ children }: { children: React.ReactNode }) {
       return cached;
     }
 
+    setLoading(true)
     const fetched = await fetchLyrics(song);
-    if (!fetched) return null;
+    setLoading(false)
+    if (!fetched) {
+      return null;
+    }
 
     cacheRef.current.set(songId, fetched);
     setLyrics(fetched);
@@ -81,7 +87,7 @@ export function LyricsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <LyricsContext.Provider value={{ lyrics, loadLyrics }}>
+    <LyricsContext.Provider value={{ lyrics, loading, loadLyrics }}>
       {children}
     </LyricsContext.Provider>
   );

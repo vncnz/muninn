@@ -30,6 +30,8 @@ function App() {
   const [groupType, setGroupType] = useState('song')
   const [showHistory, setShowHistory] = useState<null|'songs'|'artists'>('songs')
 
+  const [selectedTab, setSelectedTab] = useState<'lyrics'|'ranks'|'graphs1'|'graphs2'>('lyrics')
+
   
   useEffect(() => {
     // Subscribe once
@@ -50,10 +52,11 @@ function App() {
     };
   }, []); // empty dependency array -> run once
 
-  function nextHistory () {
-    if (!showHistory) setShowHistory('songs')
-    else if (showHistory === 'songs') setShowHistory('artists')
-    else setShowHistory(null)
+  function nextSelectedTab () {
+    if (selectedTab === 'lyrics') setSelectedTab('ranks')
+    else if (selectedTab === 'ranks') setSelectedTab('graphs1')
+    else if (selectedTab === 'graphs1') setSelectedTab('graphs2')
+    else setSelectedTab('lyrics')
   }
   
   function selectTab(type: string) {
@@ -118,32 +121,44 @@ function App() {
     />
   }
 
-  let hist = null
-  if (showHistory === 'songs') hist = <SongsHistoryChartMemorized key='historyS' />
-  if (showHistory === 'artists') hist = <ArtistsHistoryChartMemorized key='historyA' />
+  let mainTab = null
+  let buttonSymbol = null
+  if (selectedTab === 'lyrics') {
+    mainTab = <div className="lyrics-section">
+                <Lyrics playing={song} />
+              </div>
+    buttonSymbol = '∑'
+  } else if (selectedTab === 'ranks') {
+    mainTab = <div className="stats-section">
+                <div className="stats-type-selector">
+                  <a onClick={() => { selectTab('song') }} className={groupType === 'song' ? 'active' : ''}>By song</a>
+                  <a onClick={() => { selectTab('artist') }} className={groupType === 'artist' ? 'active' : ''}>By artist</a>
+                  <a onClick={() => { selectTab('album') }} className={groupType === 'album' ? 'active' : ''}>By album</a>
+                </div>
+                {currentTab}
+              </div>
+    buttonSymbol = 'f(s)'
+  } else if (selectedTab === 'graphs1') {
+    mainTab = <SongsHistoryChartMemorized key='historyS' />
+    buttonSymbol = 'f(a)'
+  } else if (selectedTab === 'graphs2') {
+    mainTab = <ArtistsHistoryChartMemorized key='historyA' />
+    buttonSymbol = '✕'
+  }
 
   return (
+    <LyricsProvider>
     <main className="container">
-      { hist }
-      <div className={"playing-info"}>
+      <button className="toggle-graph-button" onClick={() => {nextSelectedTab()}}>{buttonSymbol}</button>
+      <div className="playing-info">
         <Playing playing={song} />
       </div>
+      <div className="maintab">
+        {mainTab}
+      </div>
 
-      <div className="stats-section">
-        <button className="toggle-graph-button" onClick={() => {nextHistory()}}>{showHistory ? '✕' : '∑'}</button>
-        <div className="stats-type-selector">
-          <a onClick={() => { selectTab('song') }} className={groupType === 'song' ? 'active' : ''}>By song</a>
-          <a onClick={() => { selectTab('artist') }} className={groupType === 'artist' ? 'active' : ''}>By artist</a>
-          <a onClick={() => { selectTab('album') }} className={groupType === 'album' ? 'active' : ''}>By album</a>
-        </div>
-        {currentTab}
-      </div>
-      <div className="lyrics-section">
-        <LyricsProvider>
-          <Lyrics playing={song} />
-        </LyricsProvider>
-      </div>
     </main>
+    </LyricsProvider>
   );
 }
 
