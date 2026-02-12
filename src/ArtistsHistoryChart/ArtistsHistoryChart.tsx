@@ -7,6 +7,7 @@ import { GraphData, GraphSerie, RoundedStepChart } from "../RoundedStepChart/Rou
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAnglesLeft, faAngleLeft, faAngleRight, faAnglesRight } from '@fortawesome/free-solid-svg-icons'
+import { ChartRangeFilter, RangeFilter, RangeSettings } from "../ChartRangeFilter/ChartRangeFilter";
 
 type SongsMap = Record<string, SongInfo>
 type SerieMap = Record<string, GraphSerie>
@@ -18,9 +19,8 @@ export function ArtistsHistoryChart() {
     const [normalize, setNormalize] = useState(false)
     const [limit, setLimit] = useState(10)
     const [groupingDays, setGroupingDays] = useState(1)
-    const [from, setFrom] = useState(-10)
-    const [to, setTo] = useState(0)
-
+    const [range, setRange] = useState<RangeFilter>({ from: -10, to: 0 })
+    
     const updateGroupingDays = (e: { target: { value: any; } }) => {
         console.log('updateGroupingDays', e)
         let num = parseInt(e.target.value)
@@ -34,11 +34,11 @@ export function ArtistsHistoryChart() {
 
     const load = async () => {
         let method = cumulative ? "get_artists_history_cumulative" : "get_artists_history"
-        let res = await (invoke(method, { from, to, limit, step: groupingDays }) as Promise<ArtistHistoryStats[]>)
+        let res = await (invoke(method, { from: range.from, to: range.to, limit, step: groupingDays }) as Promise<ArtistHistoryStats[]>)
         console.log(method, res)
         sethistoryData(res)
     }
-    useEffect(() => { load() }, [cumulative, groupingDays, limit, from, to])
+    useEffect(() => { load() }, [cumulative, groupingDays, limit, range])
 
     let uniqueDates = [...new Set(historyData.map(el => el.date))]
     uniqueDates.sort() // Already sorted in database?
@@ -60,15 +60,25 @@ export function ArtistsHistoryChart() {
     }
     console.log('new structure', data)
 
-    let changeFrom = (diff: number) => { if (from+diff < to) setFrom(from+diff) }
+    // let changeFrom = (diff: number) => { if (from+diff < to) setFrom(from+diff) }
     let tmp = new Date()
-    tmp.setDate(tmp.getDate() + from)
+    tmp.setDate(tmp.getDate() + range.from)
     let fromDate = tmp.toDateString()
 
-    let changeTo = (diff: number) => { let newTo = Math.min(Math.max(from+1, to+diff), 0); if (newTo != to) setTo(newTo) }
+    // let changeTo = (diff: number) => { let newTo = Math.min(Math.max(from+1, to+diff), 0); if (newTo != to) setTo(newTo) }
     tmp = new Date()
-    tmp.setDate(tmp.getDate() + to)
+    tmp.setDate(tmp.getDate() + range.to)
     let toDate = tmp.toDateString()
+
+    let rangeFilterSettings: RangeSettings = {
+        default: range,
+        min: -25,
+        max: 0,
+        rangeCallback: (settings: RangeFilter) => {
+            console.log('settings', settings)
+            setRange(settings)
+        }
+    }
 
     return (
         <div className={classes.chart}>
@@ -100,23 +110,12 @@ export function ArtistsHistoryChart() {
             <div className={classes.periodControl}>
                 <div>
                     {fromDate}
-                    <div className={classes.movs}>
-                        <a onClick={() => { changeFrom(-10) }}><FontAwesomeIcon icon={faAnglesLeft} /></a>
-                        <a onClick={() => { changeFrom(-1) }}><FontAwesomeIcon icon={faAngleLeft} /></a>
-                        <a onClick={() => { changeFrom(1) }}><FontAwesomeIcon icon={faAngleRight} /></a>
-                        <a onClick={() => { changeFrom(10) }}><FontAwesomeIcon icon={faAnglesRight} /></a>
-                    </div>
                 </div>
                 <div>
                     {toDate}
-                    <div className={classes.movs}>
-                        <a onClick={() => { changeTo(-10) }}><FontAwesomeIcon icon={faAnglesLeft} /></a>
-                        <a onClick={() => { changeTo(-1) }}><FontAwesomeIcon icon={faAngleLeft} /></a>
-                        <a onClick={() => { changeTo(1) }}><FontAwesomeIcon icon={faAngleRight} /></a>
-                        <a onClick={() => { changeTo(10) }}><FontAwesomeIcon icon={faAnglesRight} /></a>
-                    </div>
                 </div>
             </div>
+            <ChartRangeFilter settings={rangeFilterSettings} />
         </div>
     )
 }
