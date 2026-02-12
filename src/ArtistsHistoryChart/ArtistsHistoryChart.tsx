@@ -5,6 +5,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { artistsToString, timeConversion } from "../utils";
 import { GraphData, GraphSerie, RoundedStepChart } from "../RoundedStepChart/RoundedStepChart";
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faAnglesLeft, faAngleLeft, faAngleRight, faAnglesRight } from '@fortawesome/free-solid-svg-icons'
+
 type SongsMap = Record<string, SongInfo>
 type SerieMap = Record<string, GraphSerie>
 
@@ -98,19 +101,19 @@ export function ArtistsHistoryChart() {
                 <div>
                     {fromDate}
                     <div className={classes.movs}>
-                        <a onClick={() => { changeFrom(-10) }}>-10</a>
-                        <a onClick={() => { changeFrom(-1) }}>-1</a>
-                        <a onClick={() => { changeFrom(1) }}>+1</a>
-                        <a onClick={() => { changeFrom(10) }}>+10</a>
+                        <a onClick={() => { changeFrom(-10) }}><FontAwesomeIcon icon={faAnglesLeft} /></a>
+                        <a onClick={() => { changeFrom(-1) }}><FontAwesomeIcon icon={faAngleLeft} /></a>
+                        <a onClick={() => { changeFrom(1) }}><FontAwesomeIcon icon={faAngleRight} /></a>
+                        <a onClick={() => { changeFrom(10) }}><FontAwesomeIcon icon={faAnglesRight} /></a>
                     </div>
                 </div>
                 <div>
                     {toDate}
                     <div className={classes.movs}>
-                        <a onClick={() => { changeTo(-10) }}>-10</a>
-                        <a onClick={() => { changeTo(-1) }}>-1</a>
-                        <a onClick={() => { changeTo(1) }}>+1</a>
-                        <a onClick={() => { changeTo(10) }}>+10</a>
+                        <a onClick={() => { changeTo(-10) }}><FontAwesomeIcon icon={faAnglesLeft} /></a>
+                        <a onClick={() => { changeTo(-1) }}><FontAwesomeIcon icon={faAngleLeft} /></a>
+                        <a onClick={() => { changeTo(1) }}><FontAwesomeIcon icon={faAngleRight} /></a>
+                        <a onClick={() => { changeTo(10) }}><FontAwesomeIcon icon={faAnglesRight} /></a>
                     </div>
                 </div>
             </div>
