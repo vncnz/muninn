@@ -9,3 +9,32 @@
         justify-content: space-between;
     }
 }
+
+.rangeContainer {
+    width: 100%;
+    height: 2rem;
+    background-image: linear-gradient(to top, transparent 45%, var(--secondary) 45%, var(--secondary) 55%, transparent 55%);
+    position: relative;
+
+    .rangeWindow {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        background-image: linear-gradient(to top, transparent 35%, var(--secondary) 40%, var(--secondary) 65%, transparent 65%);
+        height: 100%;
+    }
+
+    .leftCursor,
+    .rightCursor {
+        width: .5rem;
+        position: absolute;
+        top: 5px;
+        bottom: 5px;
+        background-color: var(--primary);
+        z-index: 1;
+        border-radius: 5px;
+        cursor: ew-resize;
+    }
+    .leftCursor { transform: translateX(-50%); }
+    .rightCursor { transform: translateX(50%); }
+}
