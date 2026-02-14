@@ -11,8 +11,9 @@
 }
 
 .rangeContainer {
-    width: 100%;
+    width: calc(100% - .5rem);
     height: 2rem;
+    margin: 0 auto;
     background-image: linear-gradient(to top, transparent 45%, var(--secondary) 45%, var(--secondary) 55%, transparent 55%);
     position: relative;
 
