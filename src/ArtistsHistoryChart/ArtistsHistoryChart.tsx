@@ -19,7 +19,8 @@ export function ArtistsHistoryChart() {
     const [normalize, setNormalize] = useState(false)
     const [limit, setLimit] = useState(10)
     const [groupingDays, setGroupingDays] = useState(1)
-    const [range, setRange] = useState<RangeFilter>({ from: -10, to: 0 })
+    const [range, setRange] = useState<RangeFilter>({ from: -14, to: 0 })
+    const [firstDate, setFirstDate] = useState<number>(0)
     
     const updateGroupingDays = (e: { target: { value: any; } }) => {
         console.log('updateGroupingDays', e)
@@ -31,6 +32,14 @@ export function ArtistsHistoryChart() {
         let num = parseInt(e.target.value)
         if (num > 9) setLimit(num)
     }
+
+    const first = async () => {
+        let res = await (invoke('get_first_date') as Promise<string>)
+        let days = Math.ceil((new Date().getTime() - new Date(res).getTime()) / (1000 * 60 * 60 * 24))
+        setFirstDate(-days)
+        console.log('first date', res, -days)
+    }
+    useEffect(() => { first() }, [])
 
     const load = async () => {
         let method = cumulative ? "get_artists_history_cumulative" : "get_artists_history"
@@ -72,7 +81,7 @@ export function ArtistsHistoryChart() {
 
     let rangeFilterSettings: RangeSettings = {
         default: range,
-        min: -25,
+        min: firstDate,
         max: 0,
         rangeCallback: (settings: RangeFilter) => {
             console.log('settings', settings)

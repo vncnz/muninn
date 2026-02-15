@@ -316,6 +316,11 @@ impl StatsStore {
         Ok(())
     }
 
+    pub fn get_first_date(& self) -> Result<String, rusqlite::Error> {
+        let date: String = self.conn.query_row("select min(day) from listening_days;", [], |row| row.get(0))?;
+        Ok(date)
+    }
+
     pub fn get_top_songs(&self, from: i32, limit: i32) -> Result<Vec<Song>> {
         let to = 0;
 
@@ -366,42 +371,42 @@ impl StatsStore {
 
         let mut rows = stmt.query([])?;
 
-    let mut songs: Vec<Song> = Vec::new();
-    let mut index: HashMap<i32, usize> = HashMap::new();
+        let mut songs: Vec<Song> = Vec::new();
+        let mut index: HashMap<i32, usize> = HashMap::new();
 
-    while let Some(row) = rows.next()? {
-        let song_id: i32 = row.get(0)?;
+        while let Some(row) = rows.next()? {
+            let song_id: i32 = row.get(0)?;
 
-        let song_pos = if let Some(&pos) = index.get(&song_id) {
-            pos
-        } else {
-            let song = Song {
-                id: Some(song_id),
-                hash: row.get(1)?,
-                title: row.get(2)?,
-                album: row.get(3)?,
-                length: row.get(4)?,
-                listened_time: row.get(5)?,
-                artists: Some(Vec::new()),
+            let song_pos = if let Some(&pos) = index.get(&song_id) {
+                pos
+            } else {
+                let song = Song {
+                    id: Some(song_id),
+                    hash: row.get(1)?,
+                    title: row.get(2)?,
+                    album: row.get(3)?,
+                    length: row.get(4)?,
+                    listened_time: row.get(5)?,
+                    artists: Some(Vec::new()),
+                };
+                songs.push(song);
+                let pos = songs.len() - 1;
+                index.insert(song_id, pos);
+                pos
             };
-            songs.push(song);
-            let pos = songs.len() - 1;
-            index.insert(song_id, pos);
-            pos
-        };
 
-        // Artist may be NULL (LEFT JOIN)
-        let artist_id: Option<i32> = row.get(6)?;
-        if artist_id.is_some() {
-            let artist = Artist {
-                id: artist_id,
-                name: row.get(7)?,
-            };
-            songs[song_pos].artists.as_mut().unwrap().push(artist);
+            // Artist may be NULL (LEFT JOIN)
+            let artist_id: Option<i32> = row.get(6)?;
+            if artist_id.is_some() {
+                let artist = Artist {
+                    id: artist_id,
+                    name: row.get(7)?,
+                };
+                songs[song_pos].artists.as_mut().unwrap().push(artist);
+            }
         }
-    }
 
-    Ok(songs)
+        Ok(songs)
     }
 
 

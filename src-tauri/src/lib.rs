@@ -17,6 +17,12 @@ type SharedStore = Arc<Mutex<StatsStore>>;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
+fn get_first_date(store: tauri::State<'_, SharedStore>) -> Result<String, String> {
+    let store = store.lock().expect("StatsStore poisoned");
+    Ok(store.get_first_date().expect("Failed to get first date"))
+}
+
+#[tauri::command]
 fn get_stats(state: tauri::State<'_, SharedStats>) -> Result<HashMap<String, SongStats>, String> {
     let stats = state.read().map_err(|_| "Stats poisoned")?;
     Ok(stats.iter().map(|(k,v)| (k.clone(), v.clone())).collect())
@@ -110,7 +116,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_stats, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_artists_history, get_songs_history_cumulative, get_songs_by_id, get_artists_history_cumulative])
+        .invoke_handler(tauri::generate_handler![get_stats, get_first_date, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_artists_history, get_songs_history_cumulative, get_songs_by_id, get_artists_history_cumulative])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
