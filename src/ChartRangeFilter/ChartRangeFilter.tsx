@@ -70,7 +70,7 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
     const getDayFromPageX = (x: number) => {
         let rect = containerRef.current!.getBoundingClientRect()
         let newRatio = (x - rect.left) / (rect.left + rect.width)
-        let newFrom = Math.round((settings.max - settings.min) * newRatio + settings.min + 0.5)
+        let newFrom = Math.round((settings.max - settings.min) * newRatio + settings.min + 0.25)
         // console.log('newRatio', newRatio, newFrom)
         return newFrom
     }
