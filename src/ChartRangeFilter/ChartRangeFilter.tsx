@@ -90,7 +90,7 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
         // let newFrom = getDayFromPageX(evt.pageX)
         setDraggingData({ starting_x: 0, dragging: null })
         // setRange({ from: newFrom, to: range.to })
-        console.log('draggingData', draggingData)
+        // console.log('draggingData', draggingData)
         settings.rangeCallback(range)
     }
 

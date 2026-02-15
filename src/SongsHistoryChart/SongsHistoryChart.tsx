@@ -68,7 +68,7 @@ export function SongsHistoryChart() {
         labels: uniqueDates,
         series: Object.values(series)
     }
-    console.log('new structure', data)
+    // console.log('new structure', data)
 
     let changeFrom = (diff: number) => { if (from+diff < to) setFrom(from+diff) }
     let tmp = new Date()

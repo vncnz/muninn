@@ -100,7 +100,7 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
             }
         }
     })
-    console.log('size', size)
+    // console.log('size', size)
     let svg = <svg viewBox={`0 0 ${size?.width || 1}, ${size?.height || 1}`}>
         {flows}
     </svg>

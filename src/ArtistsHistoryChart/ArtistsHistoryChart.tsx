@@ -23,12 +23,12 @@ export function ArtistsHistoryChart() {
     const [firstDate, setFirstDate] = useState<number>(0)
     
     const updateGroupingDays = (e: { target: { value: any; } }) => {
-        console.log('updateGroupingDays', e)
+        // console.log('updateGroupingDays', e)
         let num = parseInt(e.target.value)
         if (num > 0) setGroupingDays(num)
     }
     const updateLimit = (e: { target: { value: any; } }) => {
-        console.log('updateLimit', e)
+        // console.log('updateLimit', e)
         let num = parseInt(e.target.value)
         if (num > 9) setLimit(num)
     }
@@ -44,7 +44,7 @@ export function ArtistsHistoryChart() {
     const load = async () => {
         let method = cumulative ? "get_artists_history_cumulative" : "get_artists_history"
         let res = await (invoke(method, { from: range.from, to: range.to, limit, step: groupingDays }) as Promise<ArtistHistoryStats[]>)
-        console.log(method, res)
+        // console.log(method, res)
         sethistoryData(res)
     }
     useEffect(() => { load() }, [cumulative, groupingDays, limit, range])
@@ -67,7 +67,7 @@ export function ArtistsHistoryChart() {
         labels: uniqueDates,
         series: Object.values(series)
     }
-    console.log('new structure', data)
+    // console.log('new structure', data)
 
     // let changeFrom = (diff: number) => { if (from+diff < to) setFrom(from+diff) }
     let tmp = new Date()
@@ -84,7 +84,7 @@ export function ArtistsHistoryChart() {
         min: firstDate,
         max: 0,
         rangeCallback: (settings: RangeFilter) => {
-            console.log('settings', settings)
+            // console.log('settings', settings)
             setRange(settings)
         }
     }
