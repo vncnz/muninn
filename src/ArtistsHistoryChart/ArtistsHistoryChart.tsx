@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArtistHistoryStats, SongInfo } from "../types";
+import { ArtistHistoryStats } from "../types";
 import classes from "./ArtistsHistoryChart.module.scss";
 import { invoke } from "@tauri-apps/api/core";
 import { timeConversion } from "../utils";
