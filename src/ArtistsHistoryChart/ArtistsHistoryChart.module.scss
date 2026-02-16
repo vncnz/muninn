@@ -26,18 +26,4 @@
         }
     }
 
-    .periodControl {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-
-        .movs {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-        }
-        & > div:last-child {
-            text-align: right;
-        }
-    }
 }

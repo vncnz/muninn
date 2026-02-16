@@ -95,8 +95,25 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
         settings.rangeCallback(range)
     }
 
+    let tmp = new Date()
+    tmp.setDate(tmp.getDate() + range.from)
+    let fromDate = tmp.toDateString()
+
+    // let changeTo = (diff: number) => { let newTo = Math.min(Math.max(from+1, to+diff), 0); if (newTo != to) setTo(newTo) }
+    tmp = new Date()
+    tmp.setDate(tmp.getDate() + range.to)
+    let toDate = tmp.toDateString()
+
     return (
         <div>
+            <div className={classes.periodControl}>
+                <div>
+                    {fromDate}
+                </div>
+                <div>
+                    {toDate}
+                </div>
+            </div>
             <div className={classes.rangeContainer} onMouseMove={dragging} onMouseUp={endDragging} onMouseLeave={endDragging} ref={containerRef}>
                 <div className={classes.leftCursor} onMouseDown={(evt) => { startDragging(evt, 'l') }} style={{ left: (fromRatio*100)+'%' }}></div>
                 <div className={classes.rangeWindow} onMouseDown={(evt) => { startDragging(evt, 'c') }} style={{ left: (fromRatio*100)+'%', right: (100-toRatio*100)+'%' }}></div>

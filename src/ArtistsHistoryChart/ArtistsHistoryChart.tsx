@@ -70,14 +70,7 @@ export function ArtistsHistoryChart() {
     // console.log('new structure', data)
 
     // let changeFrom = (diff: number) => { if (from+diff < to) setFrom(from+diff) }
-    let tmp = new Date()
-    tmp.setDate(tmp.getDate() + range.from)
-    let fromDate = tmp.toDateString()
-
-    // let changeTo = (diff: number) => { let newTo = Math.min(Math.max(from+1, to+diff), 0); if (newTo != to) setTo(newTo) }
-    tmp = new Date()
-    tmp.setDate(tmp.getDate() + range.to)
-    let toDate = tmp.toDateString()
+    
 
     let rangeFilterSettings: RangeSettings = {
         default: range,
@@ -116,14 +109,6 @@ export function ArtistsHistoryChart() {
                 </label>
             </div>
             <RoundedStepChart data={data} />
-            <div className={classes.periodControl}>
-                <div>
-                    {fromDate}
-                </div>
-                <div>
-                    {toDate}
-                </div>
-            </div>
             <ChartRangeFilter settings={rangeFilterSettings} />
         </div>
     )
