@@ -37,7 +37,7 @@ export function ArtistsHistoryChart() {
         let res = await (invoke('get_first_date') as Promise<string>)
         let days = Math.ceil((new Date().getTime() - new Date(res).getTime()) / (1000 * 60 * 60 * 24))
         setFirstDate(-days)
-        console.log('first date', res, -days)
+        // console.log('first date', res, -days)
     }
     useEffect(() => { first() }, [])
 

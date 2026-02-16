@@ -1,8 +1,8 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import classes from "./ChartRangeFilter.module.scss";
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faAnglesLeft, faAngleLeft, faAngleRight, faAnglesRight } from '@fortawesome/free-solid-svg-icons'
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+// import { faAnglesLeft, faAngleLeft, faAngleRight, faAnglesRight } from '@fortawesome/free-solid-svg-icons'
 
 export interface RangeFilter {
     from: number,
@@ -17,7 +17,7 @@ export interface RangeSettings {
 
 export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
 
-    const rangeRef = useRef<HTMLDivElement | null>(null)
+    // const rangeRef = useRef<HTMLDivElement | null>(null)
     const containerRef = useRef<HTMLDivElement | null>(null)
 
     const [range, setRange] = useState<RangeFilter>(settings.default)
@@ -28,19 +28,7 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
         if (num > 0) setGroupingDays(num)
     } */
 
-    useLayoutEffect(() => {
-        /* if (!svgRef.current) return
-
-        const observer = new ResizeObserver(entries => {
-            const { width, height } = entries[0].contentRect
-            setSize({ width, height })
-        })
-
-        observer.observe(svgRef.current)
-        return () => observer.disconnect() */
-    }, [])
-
-    let changeFrom = (diff: number) => {
+    /* let changeFrom = (diff: number) => {
         if (range.from+diff < range.to) {
             let r = { from: range.from+diff, to: range.to }
             setRange(r)
@@ -54,7 +42,7 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
             setRange(r)
             settings.rangeCallback(r)
         }
-    }
+    } */
 
     // console.log('rangefilter settings', settings, range)
 
@@ -114,7 +102,7 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
                 <div className={classes.rangeWindow} onMouseDown={(evt) => { startDragging(evt, 'c') }} style={{ left: (fromRatio*100)+'%', right: (100-toRatio*100)+'%' }}></div>
                 <div className={classes.rightCursor} onMouseDown={(evt) => { startDragging(evt, 'r') }} style={{ right: (100-toRatio*100)+'%' }}></div>
             </div>
-            <div className={classes.rangeFilter} ref={rangeRef}>
+            {/*<div className={classes.rangeFilter} ref={rangeRef}>
                 <div className={classes.periodControl}>
                     <div>
                         <div className={classes.movs}>
@@ -133,7 +121,7 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>*/}
         </div>
     )
 }
