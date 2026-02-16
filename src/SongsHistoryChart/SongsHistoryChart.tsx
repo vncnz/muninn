@@ -4,6 +4,7 @@ import classes from "./SongsHistoryChart.module.scss";
 import { invoke } from "@tauri-apps/api/core";
 import { artistsToString, timeConversion } from "../utils";
 import { GraphData, GraphSerie, RoundedStepChart } from "../RoundedStepChart/RoundedStepChart";
+import { ChartRangeFilter, RangeFilter, RangeSettings } from "../ChartRangeFilter/ChartRangeFilter";
 
 type SongsMap = Record<string, SongInfo>
 type SerieMap = Record<string, GraphSerie>
@@ -16,8 +17,8 @@ export function SongsHistoryChart() {
     const [normalize, setNormalize] = useState(false)
     const [limit, setLimit] = useState(10)
     const [groupingDays, setGroupingDays] = useState(1)
-    const [from, setFrom] = useState(-10)
-    const [to, setTo] = useState(0)
+    const [range, setRange] = useState<RangeFilter>({ from: -14, to: 0 })
+    const [firstDate, setFirstDate] = useState<number>(0)
 
     const updateGroupingDays = (e: { target: { value: any; } }) => {
         console.log('updateGroupingDays', e)
@@ -30,9 +31,17 @@ export function SongsHistoryChart() {
         if (num > 9) setLimit(num)
     }
 
+    const first = async () => {
+        let res = await (invoke('get_first_date') as Promise<string>)
+        let days = Math.ceil((new Date().getTime() - new Date(res).getTime()) / (1000 * 60 * 60 * 24))
+        setFirstDate(-days)
+        // console.log('first date', res, -days)
+    }
+    useEffect(() => { first() }, [])
+
     const load = async () => {
         let method = cumulative ? "get_songs_history_cumulative" : "get_songs_history"
-        let res = await (invoke(method, { from, to, limit, step: groupingDays }) as Promise<SongHistoryStats[]>)
+        let res = await (invoke(method, { from: range.from, to: range.to, limit, step: groupingDays }) as Promise<SongHistoryStats[]>)
         console.log(method, res)
         sethistoryData(res)
     }
@@ -47,7 +56,7 @@ export function SongsHistoryChart() {
             console.warn('No historyData')
         }
     }
-    useEffect(() => { load() }, [cumulative, groupingDays, limit, from, to])
+    useEffect(() => { load() }, [cumulative, groupingDays, limit, range])
     useEffect(() => { loadSongsData() }, [historyData])
 
     let uniqueDates = [...new Set(historyData.map(el => el.date))]
@@ -70,15 +79,15 @@ export function SongsHistoryChart() {
     }
     // console.log('new structure', data)
 
-    let changeFrom = (diff: number) => { if (from+diff < to) setFrom(from+diff) }
-    let tmp = new Date()
-    tmp.setDate(tmp.getDate() + from)
-    let fromDate = tmp.toDateString()
-
-    let changeTo = (diff: number) => { let newTo = Math.min(Math.max(from+1, to+diff), 0); if (newTo != to) setTo(newTo) }
-    tmp = new Date()
-    tmp.setDate(tmp.getDate() + to)
-    let toDate = tmp.toDateString()
+    let rangeFilterSettings: RangeSettings = {
+        default: range,
+        min: firstDate,
+        max: 0,
+        rangeCallback: (settings: RangeFilter) => {
+            // console.log('settings', settings)
+            setRange(settings)
+        }
+    }
 
     return (
         <div className={classes.chart}>
@@ -107,26 +116,7 @@ export function SongsHistoryChart() {
                 </label>
             </div>
             <RoundedStepChart data={data} />
-            <div className={classes.periodControl}>
-                <div>
-                    {fromDate}
-                    <div className={classes.movs}>
-                        <a onClick={() => { changeFrom(-10) }}>-10</a>
-                        <a onClick={() => { changeFrom(-1) }}>-1</a>
-                        <a onClick={() => { changeFrom(1) }}>+1</a>
-                        <a onClick={() => { changeFrom(10) }}>+10</a>
-                    </div>
-                </div>
-                <div>
-                    {toDate}
-                    <div className={classes.movs}>
-                        <a onClick={() => { changeTo(-10) }}>-10</a>
-                        <a onClick={() => { changeTo(-1) }}>-1</a>
-                        <a onClick={() => { changeTo(1) }}>+1</a>
-                        <a onClick={() => { changeTo(10) }}>+10</a>
-                    </div>
-                </div>
-            </div>
+            <ChartRangeFilter settings={rangeFilterSettings} />
         </div>
     )
 }
