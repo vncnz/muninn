@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { ArtistHistoryStats, SongHistoryStats, SongInfo } from "../types";
+import { ArtistHistoryStats, SongInfo } from "../types";
 import classes from "./ArtistsHistoryChart.module.scss";
 import { invoke } from "@tauri-apps/api/core";
-import { artistsToString, timeConversion } from "../utils";
+import { timeConversion } from "../utils";
 import { GraphData, GraphSerie, RoundedStepChart } from "../RoundedStepChart/RoundedStepChart";
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faAnglesLeft, faAngleLeft, faAngleRight, faAnglesRight } from '@fortawesome/free-solid-svg-icons'
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+// import { faAnglesLeft, faAngleLeft, faAngleRight, faAnglesRight } from '@fortawesome/free-solid-svg-icons'
 import { ChartRangeFilter, RangeFilter, RangeSettings } from "../ChartRangeFilter/ChartRangeFilter";
 
-type SongsMap = Record<string, SongInfo>
 type SerieMap = Record<string, GraphSerie>
 
 export function ArtistsHistoryChart() {
@@ -70,7 +69,6 @@ export function ArtistsHistoryChart() {
     // console.log('new structure', data)
 
     // let changeFrom = (diff: number) => { if (from+diff < to) setFrom(from+diff) }
-    
 
     let rangeFilterSettings: RangeSettings = {
         default: range,
