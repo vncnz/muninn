@@ -62,10 +62,12 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
     let toRatio = (range.to - settings.min)/(settings.max - settings.min)
     // console.log('ratios', fromRatio, toRatio)
 
-    const [draggingData, setDraggingData] = useState<{starting_x:number,dragging:'l'|'r'|null}>({ starting_x: 0, dragging: null })
-    const startDragging = (evt: any, side: 'l'|'r') => {
+    const [draggingData, setDraggingData] = useState<{starting_x:number, dragging:'l'|'r'|'c'|null}>({ starting_x: 0, dragging: null })
+    const startDragging = (evt: any, side: 'l'|'r'|'c') => {
         // console.log('mouse evt', evt)
-        setDraggingData({ starting_x: evt.pageX, dragging: side })
+        let newValue = getDayFromPageX(evt.pageX)
+        setDraggingData({ starting_x: - newValue + range.from, dragging: side })
+        // console.log('starting drag', { starting_x: newValue - range.from, dragging: side })
     }
     const getDayFromPageX = (x: number) => {
         let rect = containerRef.current!.getBoundingClientRect()
@@ -84,6 +86,17 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
             else if (draggingData.dragging === 'r') {
                 if (range.from < newValue) setRange({ from: range.from, to: newValue })
             }
+            else if (draggingData.dragging === 'c') {
+                // console.log('dragging center', newValue, draggingData.starting_x, range)
+                let newFrom = newValue + draggingData.starting_x
+                let len = range.to - range.from
+                let newTo = newFrom + len
+                if (newFrom >= settings.min && newTo <= settings.max) {
+                    setRange({ from: newFrom, to: newTo })
+                } else {
+                    // console.log('out of bounds', newFrom, newTo, settings)
+                }
+            }
         }
     }
     const endDragging = (_evt: any) => {
@@ -98,7 +111,7 @@ export function ChartRangeFilter({ settings }: { settings: RangeSettings }) {
         <div>
             <div className={classes.rangeContainer} onMouseMove={dragging} onMouseUp={endDragging} onMouseLeave={endDragging} ref={containerRef}>
                 <div className={classes.leftCursor} onMouseDown={(evt) => { startDragging(evt, 'l') }} style={{ left: (fromRatio*100)+'%' }}></div>
-                <div className={classes.rangeWindow} style={{ left: (fromRatio*100)+'%', right: (100-toRatio*100)+'%' }}></div>
+                <div className={classes.rangeWindow} onMouseDown={(evt) => { startDragging(evt, 'c') }} style={{ left: (fromRatio*100)+'%', right: (100-toRatio*100)+'%' }}></div>
                 <div className={classes.rightCursor} onMouseDown={(evt) => { startDragging(evt, 'r') }} style={{ right: (100-toRatio*100)+'%' }}></div>
             </div>
             <div className={classes.rangeFilter} ref={rangeRef}>
