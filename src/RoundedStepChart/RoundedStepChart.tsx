@@ -1,6 +1,6 @@
 // import { ArtistStat } from "../types";
 // import { timeConversion } from "../utils";
-import { JSX, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { JSX, useLayoutEffect, useRef, useState } from "react";
 import classes from "./RoundedStepChart.module.scss";
 import { dateToHuman, getPalette } from "../utils";
 
@@ -60,7 +60,7 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
     let yspace = size?.height || 100
 
     let colors = getPalette(data.series.length)
-    data.series.forEach((serie: GraphSerie, idx: number) => {
+    data.series.forEach((serie: GraphSerie) => {
         let color = colors[serie.id % colors.length]
         for (let i = 0; i < serie.points.length - 1; i++) {
             let date0 = dates[i]

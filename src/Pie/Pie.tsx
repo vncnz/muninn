@@ -4,15 +4,15 @@ import { songStat } from "../types";
 export default function Pie ({ data }: { data: songStat[] }) {
     // console.log(data)
 
-    let full = data.reduce((acc: number, v: songStat) => acc + v.time, 0)
+    let full = data.reduce((acc: number, v: songStat) => acc + v.metadata.listened_time, 0)
     let cumulate = 0
     let radius = 10
     let color = -1
     let colors = ["rgb(200, 0, 0)", "rgb(0, 200, 0)", "rgb(0, 0, 200)", 
                   "rgb(200, 0, 200)", "rgb(200, 200, 0)", "rgb(0, 200, 200)",
                   "rgb(100, 100, 100)", "rgb(100, 200, 100)"]
-    let circles = data.map((el, idx) => {
-        let v = el.time / full
+    let circles = data.map((el) => {
+        let v = el.metadata.listened_time / full
         let dash = "0 " + (cumulate * Math.PI * radius) + " " + (v * Math.PI * radius) + " 1000"
         // console.log(k, data[k] / full, cumulate)
         color = (color + 1) % colors.length
