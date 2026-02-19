@@ -32,6 +32,7 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - ~~Add time ranges (today, 7d, 30d, all)~~
 - ~~Stats by album~~
 - ~~Song length update when wrong in the first mpris event~~
+- Fix song length even after the first event of a song playing
 - New layout (see below)
 - Make filters resistent to stats type change
 - Flush current song when closing app
