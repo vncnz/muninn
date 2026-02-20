@@ -62,6 +62,7 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
     let colors = getPalette(data.series.length)
     data.series.forEach((serie: GraphSerie) => {
         let color = colors[serie.id % colors.length]
+        let wasShowingRightCircle = true
         for (let i = 0; i < serie.points.length - 1; i++) {
             let date0 = dates[i]
             let date1 = dates[i+1]
@@ -71,14 +72,15 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
             let max1 = (data.normalize ? date1.max : all_max)*1.01
             let yunit0 = yspace / max0
             let yunit1 = yspace / max1
+            let showRightCircle = v1 && v1 !== v0 || i === serie.points.length - 2
             if (v0 && v1) {
-                let x1 = (i+0.5)*xspace + 6
+                let x1 = (i+0.5)*xspace + (wasShowingRightCircle ? 6 : 0)
                 let y1 = (max0-v0)*yunit0
                 let c1x = (i+1)*xspace
                 let c1y = (max0-v0)*yunit0
                 let c2x = (i+1)*xspace
                 let c2y = (max1-v1)*yunit1
-                let x2 = (i+1.5)*xspace - 6
+                let x2 = (i+1.5)*xspace - (showRightCircle ? 6 : 0)
                 let y2 = (max1-v1)*yunit1
                 let el = <path d={`M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`} stroke={color} fill="transparent" strokeWidth="2" />
                 flows.push(el)
@@ -86,18 +88,19 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
                 let el = <circle cx={i*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2"><title>Test</title></circle>
                 flows.push(el)
             } */
-           if (v1) {
+           if (showRightCircle) {
                 let el = <circle cx={(i+1.5)*xspace} cy={(max1-v1)*yunit1} r="6" stroke={color} fill="transparent" strokeWidth="2">
                     <title>(id {serie.id}) {serie.label} ({serie.dataToString(v1)}, {dateToHuman(date1.date as string)})</title>
                 </circle>
                 flows.push(el)
             }
-            if (v0 && i === 0) {
+            if (v0 && (i === 0 || !v1)) {
                 let el = <circle cx={(i+0.5)*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2">
                     <title>(id {serie.id}) {serie.label} ({serie.dataToString(v0)}, {dateToHuman(date0.date as string)})</title>
                 </circle>
                 flows.push(el)
             }
+            wasShowingRightCircle = showRightCircle
         }
     })
     // console.log('size', size)
