@@ -59,48 +59,55 @@ export function RoundedStepChart({ data }: { data: GraphData }) {
     let xspace = (size?.width || 100) / dates.length
     let yspace = size?.height || 100
 
+    let createPoint = (v: number, y: number, i: number, serie: GraphSerie, color: string, date: String) => {
+        let el = <circle cx={i*xspace} cy={y*yspace} r="6" stroke={color} fill="transparent" strokeWidth="2">
+            <title>(id {serie.id}) {serie.label} ({serie.dataToString(v)}, {dateToHuman(date as string)})</title>
+        </circle>
+        return el
+    }
+    let createLine = (x1: number, y1: number, x2: number, y2: number, color: string) => {
+        let el = <line x1={x1*xspace+5} y1={y1*yspace} x2={x2*xspace-5} y2={y2*yspace} stroke={color} fill="transparent" strokeWidth="2"></line>
+        return el
+    }
+    let createBezier = (x1: number, y1: number, x2: number, y2: number, color: string) => {
+        let c1x = (x1+x2)/2
+        let c1y = y1
+        let c2x = (x1+x2)/2
+        let c2y = y2
+        let el = <path d={`M ${x1*xspace+5} ${y1*yspace} C ${c1x*xspace} ${c1y*yspace}, ${c2x*xspace} ${c2y*yspace}, ${x2*xspace-5} ${y2*yspace}`} stroke={color} fill="transparent" strokeWidth="2" />
+        return el
+    }
+
+    console.log('data', data)
     let colors = getPalette(data.series.length)
     data.series.forEach((serie: GraphSerie) => {
         let color = colors[serie.id % colors.length]
-        for (let i = 0; i < serie.points.length - 1; i++) {
-            let date0 = dates[i]
-            let date1 = dates[i+1]
-            let v0 = serie.points[i]
-            let v1 = serie.points[i+1]
-            let max0 = (data.normalize ? date0.max : all_max)*1.01
-            let max1 = (data.normalize ? date1.max : all_max)*1.01
-            let yunit0 = yspace / max0
-            let yunit1 = yspace / max1
-            if (v0 && v1) {
-                let x1 = (i+0.5)*xspace + 6
-                let y1 = (max0-v0)*yunit0
-                let c1x = (i+1)*xspace
-                let c1y = (max0-v0)*yunit0
-                let c2x = (i+1)*xspace
-                let c2y = (max1-v1)*yunit1
-                let x2 = (i+1.5)*xspace - 6
-                let y2 = (max1-v1)*yunit1
-                let el = <path d={`M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`} stroke={color} fill="transparent" strokeWidth="2" />
+
+        let ratios = serie.points.map((point: number|null, idx: number) => {
+            if (point === null) return null
+            let max = (data.normalize ? dates[idx].max : all_max)*1.01
+            let num = point/max
+            return Math.round((num + Number.EPSILON) * 100) / 100
+        })
+
+        let last_pointed_idx = -1
+        ratios.forEach((rat: number|null, idx: number) => {
+            if (rat !== null && (idx === 0 || rat !== ratios[idx-1] || rat !== ratios[idx+1])) {
+                let el = createPoint(serie.points[idx], 1-rat, idx+0.5, serie, color, dates[idx].date)
                 flows.push(el)
-            } /* else if (v0) {
-                let el = <circle cx={i*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2"><title>Test</title></circle>
-                flows.push(el)
-            } */
-           if (v1) {
-                let el = <circle cx={(i+1.5)*xspace} cy={(max1-v1)*yunit1} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>(id {serie.id}) {serie.label} ({serie.dataToString(v1)}, {dateToHuman(date1.date as string)})</title>
-                </circle>
-                flows.push(el)
+                if (last_pointed_idx > -1) {
+                    if (rat === ratios[idx-1]) {
+                        let line = createLine(last_pointed_idx+0.5, 1-ratios[idx-1]!, idx+0.5, 1-rat, color)
+                        flows.push(line)
+                    } else if (ratios[idx-1] !== null){
+                        let line = createBezier(last_pointed_idx+0.5, 1-ratios[idx-1]!, idx+0.5, 1-rat, color)
+                        flows.push(line)
+                    }
+                }
+                last_pointed_idx = idx
             }
-            if (v0 && i === 0) {
-                let el = <circle cx={(i+0.5)*xspace} cy={(max0-v0)*yunit0} r="6" stroke={color} fill="transparent" strokeWidth="2">
-                    <title>(id {serie.id}) {serie.label} ({serie.dataToString(v0)}, {dateToHuman(date0.date as string)})</title>
-                </circle>
-                flows.push(el)
-            }
-        }
+        })
     })
-    // console.log('size', size)
     let svg = <svg viewBox={`0 0 ${size?.width || 1}, ${size?.height || 1}`}>
         {flows}
     </svg>
