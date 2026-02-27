@@ -32,6 +32,9 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - ~~Add time ranges (today, 7d, 30d, all)~~
 - ~~Stats by album~~
 - ~~Song length update when wrong in the first mpris event~~
+- - ~~Add filter feature (by title, by artist, etc.)~~
+- ~~Limit number of results shown in stats (top 10, top 25, top 50, something like that)~~
+- RE-ENGINEERING: split the project into two parts: a daemon and a client/UI
 - Fix song length even after the first event of a song playing
 - New layout (see below)
 - Make filters resistent to stats type change
@@ -40,8 +43,6 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - Exclude plays without an artist
 - Limit stats refresh during music listening
 - Add search feature (by title, by artist, etc.)
-- ~~Add filter feature (by title, by artist, etc.)~~
-- ~~Limit number of results shown in stats (top 10, top 25, top 50, something like that)~~
 - Collapse songs belonging to multiple albums when reading statistics from the database?
 - Add comparisons between different time ranges stats (current vs previous)? (partially replaced by history charts?)
 - Add the ability to reset a song counter or ignore a song/artist
