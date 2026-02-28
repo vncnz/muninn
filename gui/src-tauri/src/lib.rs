@@ -1,7 +1,8 @@
 mod mpris_manager;
 mod database;
 use std::{sync::{Arc, Mutex}};
-use crate::{database::StatsStore, mpris_manager::{AlbumStats, ArtistHistoryStats, ArtistStats, MprisManager, Song, SongHistoryStats, SongStats}};
+use crate::{database::StatsStore, mpris_manager::{MprisManager, SongStats}};
+use shared::{AlbumStats, ArtistHistoryStats, ArtistStats, Song, SongHistoryStats};
 use std::collections::HashMap;
 use tauri::{Manager};
 use std::sync::{RwLock};

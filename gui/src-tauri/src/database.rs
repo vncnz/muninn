@@ -3,7 +3,7 @@ use std::path::Path;
 use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
 
-use crate::mpris_manager::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, Song, SongHistoryStats};
+use shared::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, Song, SongHistoryStats};
 
 use chrono;
 
