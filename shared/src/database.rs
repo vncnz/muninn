@@ -54,6 +54,11 @@ impl StatsStore {
             println!("Database version {} is up to date", version);
         }
 
+        conn.execute_batch("
+            PRAGMA journal_mode = WAL;
+            PRAGMA synchronous = NORMAL;
+        ")?;
+
         Ok(StatsStore { conn })
     }
 
