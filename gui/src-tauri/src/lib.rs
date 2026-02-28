@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex, mpsc};
-use shared::mpris_manager::MprisManager;
 use std::sync::mpsc::{Sender,Receiver};
 use shared::database::StatsStore;
 use shared::{AlbumStats, ArtistHistoryStats, ArtistStats, SharedStats, SharedStore, Song, SongHistoryStats, SongStats, SongPlaying};
@@ -85,7 +84,7 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             // let manager = Arc::new(Mutex::new(MprisManager::new()));
-            let app_handle = app.handle().clone();
+            // let app_handle = app.handle().clone();
 
             let data_dir = app
                 .path()
@@ -105,21 +104,21 @@ pub fn run() {
 
             // let stats_clone = stats.clone();
 
-            let (tx_playing, rx_playing): (Sender<SongPlaying>, Receiver<SongPlaying>) = mpsc::channel();
+            // let (tx_playing, rx_playing): (Sender<SongPlaying>, Receiver<SongPlaying>) = mpsc::channel();
 
             // let _ = app.emit("mpris-event", SongPlaying { metadata: current.clone().unwrap(), position });
 
             // Background listener
-            std::thread::spawn(move || {
+            /*std::thread::spawn(move || {
                 MprisManager::new(store).start_listening(tx_playing);
-            });
+            });*/
 
-            std::thread::spawn(move || {
+            /*std::thread::spawn(move || {
                 while let Ok(song) = rx_playing.recv() {
                     let _ = app_handle.emit("mpris-event", song);
                 }
                 println!("Closed MPRIS channel");
-            });
+            });*/
 
             Ok(())
         })

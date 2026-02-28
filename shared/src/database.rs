@@ -62,6 +62,7 @@ impl StatsStore {
         Ok(StatsStore { conn })
     }
 
+    #[allow(dead_code)]
     fn reset_database(conn: &Connection) -> rusqlite::Result<()> {
         conn.execute("DROP TABLE IF EXISTS song;", [])?;
         conn.execute("DROP TABLE IF EXISTS songs;", [])?;

@@ -24,8 +24,8 @@ pub struct SongStats {
 
 #[derive(Serialize, Clone)]
 pub struct SongPlaying {
-    metadata: Song,
-    position: f64
+    pub metadata: Song,
+    pub position: f64
 }
 
 #[derive(Serialize, Clone, Debug)]

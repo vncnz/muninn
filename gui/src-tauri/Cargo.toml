@@ -1,5 +1,5 @@
 [package]
-name = "muninn"
+name = "muninn-gui"
 version = "0.9.0"
 description = "A Tauri App"
 authors = ["Vincenzo Minolfi"]
