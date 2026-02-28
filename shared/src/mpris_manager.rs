@@ -1,5 +1,5 @@
 use std::process::Command;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::Duration;
 
@@ -213,7 +213,7 @@ impl MprisManager {
                         }
                     }
                 }
-                tx_playing.send(SongPlaying { metadata: current.clone().unwrap(), position });
+                let _ = tx_playing.send(SongPlaying { metadata: current.clone().unwrap(), position });
             }
 
             // let maybe_server_response = get_song_blocking(&title, &artist, &album, duration_secs);
