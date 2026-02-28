@@ -1,4 +1,32 @@
+use std::{collections::HashMap, sync::{Arc, Mutex, RwLock}};
+
 use serde::{Serialize};
+
+use crate::database::StatsStore;
+
+pub mod database;
+pub mod mpris_manager;
+
+#[derive(Serialize, Clone, Default)]
+pub struct SongInfo {
+  pub key: String,
+  pub title: String,
+  pub artist: String,
+  pub album: String,
+  pub len_secs: f64
+}
+
+#[derive(Serialize, Clone, Default)]
+pub struct SongStats {
+    pub(crate) metadata: SongInfo,
+    pub(crate) time: f64
+}
+
+#[derive(Serialize, Clone)]
+pub struct SongPlaying {
+    metadata: Song,
+    position: f64
+}
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Artist {
@@ -79,3 +107,6 @@ impl Song {
         None
     }
 }
+
+pub type SharedStats = Arc<RwLock<HashMap<String, SongStats>>>;
+pub type SharedStore = Arc<Mutex<StatsStore>>;

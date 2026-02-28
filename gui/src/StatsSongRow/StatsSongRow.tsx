@@ -7,21 +7,6 @@ import classes from "./StatsSongRow.module.scss";
 
 
 export function StatsSongRow({ song, max, idd }: { song: songStatTable, max: number, idd: any }) {
-    // const [songStats, setSongStats] = useState([] as SongInfo[]);
-    
-    /*let columns = [
-{
-            key: "listened_time",
-            label: "Total\xa0time",
-            // align: "right",
-            format: timeConversion
-        },
-        { key: "ratio", label: "Count", format: (v: number) => Math.floor(v+0.1) },
-        { key: "title", label: "Title" },
-        { key: "artists", label: "Artist", format: artistsToString },
-        { key: "album", label: "Album" },
-        { key: "length", label: "Duration", format: timeConversion }
-    ] as Column<songStatTable>[]*/
 
     return (
         <div className={classes.songstatrow + ' id-' + idd}>

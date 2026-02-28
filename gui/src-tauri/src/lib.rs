@@ -1,14 +1,10 @@
-mod mpris_manager;
-mod database;
-use std::{sync::{Arc, Mutex}};
-use crate::{database::StatsStore, mpris_manager::{MprisManager, SongStats}};
-use shared::{AlbumStats, ArtistHistoryStats, ArtistStats, Song, SongHistoryStats};
+use std::sync::{Arc, Mutex, mpsc};
+use shared::mpris_manager::MprisManager;
+use std::sync::mpsc::{Sender,Receiver};
+use shared::database::StatsStore;
+use shared::{AlbumStats, ArtistHistoryStats, ArtistStats, SharedStats, SharedStore, Song, SongHistoryStats, SongStats, SongPlaying};
 use std::collections::HashMap;
-use tauri::{Manager};
-use std::sync::{RwLock};
-
-type SharedStats = Arc<RwLock<HashMap<String, SongStats>>>;
-type SharedStore = Arc<Mutex<StatsStore>>;
+use tauri::{Emitter, Manager};
 
 /* impl Drop for StatsStore {
     fn drop(&mut self) {
@@ -109,9 +105,20 @@ pub fn run() {
 
             // let stats_clone = stats.clone();
 
+            let (tx_playing, rx_playing): (Sender<SongPlaying>, Receiver<SongPlaying>) = mpsc::channel();
+
+            // let _ = app.emit("mpris-event", SongPlaying { metadata: current.clone().unwrap(), position });
+
             // Background listener
             std::thread::spawn(move || {
-                MprisManager::new(store).start_listening(app_handle);
+                MprisManager::new(store).start_listening(tx_playing);
+            });
+
+            std::thread::spawn(move || {
+                while let Ok(song) = rx_playing.recv() {
+                    let _ = app_handle.emit("mpris-event", song);
+                }
+                println!("Closed MPRIS channel");
             });
 
             Ok(())

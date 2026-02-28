@@ -3,7 +3,7 @@ use std::path::Path;
 use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
 
-use shared::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, Song, SongHistoryStats};
+use crate::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, Song, SongHistoryStats};
 
 use chrono;
 
@@ -121,13 +121,6 @@ impl StatsStore {
         Ok(())
     }
 
-    /* pub fn flush_track(&self, track: &SongStats) -> rusqlite::Result<()> {
-        self.conn.execute(
-            "INSERT INTO song (id, title, artist, album, len, time) VALUES (?1, ?2, ?3, ?4, ?5, ?6) on conflict (id) do update set time = time + excluded.time, len = min(excluded.len, len)",
-            (&track.metadata.key, &track.metadata.title, &track.metadata.artist, &track.metadata.album, &track.metadata.len_secs, &track.time),
-        )?;
-        Ok(())
-    } */
     pub fn get_song_by_id(&self, id: i32) -> Result<Option<Song>> {
         self.get_song_by("", id)
     }

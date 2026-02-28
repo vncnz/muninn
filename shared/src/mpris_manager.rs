@@ -1,36 +1,15 @@
 use std::process::Command;
+use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::time::Duration;
-use tauri::AppHandle;
-use tauri::Emitter;
-use serde::{Serialize};
 
-use crate::SharedStore;
+use crate::{SharedStore, Song, SongPlaying};
+use crate::database::StatsStore;
 
 // const MAX_VALID_LENGTH_SECS: f64 = 86400.0;
 // const MIN_TIME_TO_SAVE_SECS: f64 = 10.0;
 
-use shared::Song;
 
-
-
-
-
-
-
-/* pub struct SongArtist {
-    pub song_id: i32,
-    pub artist_id: i32
-} */
-
-#[derive(Serialize, Clone, Default)]
-pub struct SongInfo {
-  pub key: String,
-  pub title: String,
-  pub artist: String,
-  pub album: String,
-  pub len_secs: f64
-}
 
 /* fn get_song_hash(title: &str, artist: &str, album: &str) -> String {
     format!("{}\x1F{}\x1F{}", title, artist, album)
@@ -77,21 +56,10 @@ fn strip_last_chunk_from_string(s: &str) -> (String, String) {
     }
 } */
 
-#[derive(Serialize, Clone)]
-struct SongPlaying {
-    metadata: Song,
-    position: f64
-}
 
-#[derive(Serialize, Clone, Default)]
-pub struct SongStats {
-    pub(crate) metadata: SongInfo,
-    pub(crate) time: f64
-}
 
 pub struct MprisManager {
-    shared_store: std::sync::Arc<std::sync::Mutex<crate::database::StatsStore>>
-    // pub stats: HashMap<String, SongStats>
+    shared_store: std::sync::Arc<std::sync::Mutex<StatsStore>>
 }
 
 /* impl Drop for MprisManager {
@@ -108,7 +76,7 @@ impl MprisManager {
         }
     }
 
-    pub fn start_listening (&mut self, app: AppHandle) {
+    pub fn start_listening (&mut self, tx_playing: Sender<SongPlaying>) {
         // let _ = app.emit("mpris-event", msg);
 
         // let mut last_active_player: String = String::new();
@@ -245,7 +213,7 @@ impl MprisManager {
                         }
                     }
                 }
-                let _ = app.emit("mpris-event", SongPlaying { metadata: current.clone().unwrap(), position });
+                tx_playing.send(SongPlaying { metadata: current.clone().unwrap(), position });
             }
 
             // let maybe_server_response = get_song_blocking(&title, &artist, &album, duration_secs);
