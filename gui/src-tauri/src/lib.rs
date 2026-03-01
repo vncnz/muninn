@@ -111,7 +111,7 @@ pub fn run() {
                 loop {
                     sock.poll_messages();
                     if let Ok(data) = sock.rx.try_recv() {
-                        eprintln!("New event {:?}", data);
+                        // eprintln!("New event {:?}", data);
                         let _ = app_handle.emit("mpris-event", data);
                     }
                     std::thread::sleep(Duration::from_millis(50));

@@ -8,10 +8,14 @@ use shared::SharedStore;
 use std::env;
 use std::path::{Path, PathBuf};
 
+mod sock;
+use crate::lyrics::Lyrics;
 use crate::sock::send;
 use crate::sock::start_socket_dispatcher;
+use crate::utils::get_song_blocking;
 
-mod sock;
+mod utils;
+mod lyrics;
 
 fn expand_tilde(path: &Path) -> PathBuf {
     let s = path.to_str().unwrap_or("");
@@ -40,10 +44,34 @@ fn main() {
     /* loop {
         thread::sleep(Duration::from_millis(500));
     } */
-   while let Ok(song) = rx_playing.recv() {
-        // let _ = app_handle.emit("mpris-event", song);
+    let mut last_song_id: Option<i32> = None;
+    let mut last_lyrics = Lyrics::new();
+    while let Ok(song) = rx_playing.recv() {
         // println!("updated mpris {}", song.metadata.title);
-        let json_val_result = serde_json::to_value(song);
+        let song_clone = song.clone();
+
+        // Lyrics stuff
+        let changed = song.metadata.id != last_song_id;
+        if changed {
+            last_song_id = song.metadata.id;
+            if let Some(arts) = song.metadata.artists {
+                let raw_artist = arts.iter().map(|s| s.name.clone()).collect::<Vec<String>>().join(",");
+                let maybe_server_response = get_song_blocking(&song.metadata.title, &raw_artist, &song.metadata.album, song.metadata.length.into());
+                let status = last_lyrics.apply_song_text(maybe_server_response);
+                match status {
+                    Ok(s) => {
+                        println!("{s}");
+                        // TODO: save!
+                    },
+                    Err(s) => {
+                        println!("text status {s}");
+                    }
+                }
+            }
+        }
+
+        // GUI notification
+        let json_val_result = serde_json::to_value(song_clone);
         if let Ok(json_val) = json_val_result {
             if !send(json_val, tx.clone()) {
                 eprintln!("Dispatcher terminato, chiudo thread e muoio");

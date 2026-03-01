@@ -41,6 +41,10 @@ impl StatsStore {
                 StatsStore::apply9changes(&conn)?;
                 println!("Upgraded to v9");
             }
+            if version < 10 {
+                StatsStore::apply10changes(&conn)?;
+                println!("Upgraded to v10");
+            }
             conn.execute(
                 &format!("PRAGMA user_version = {};", CURRENT_DB_VERSION),
                 [],
@@ -122,6 +126,19 @@ impl StatsStore {
                 FROM listening_days AS inner_ld
                 WHERE inner_ld.song_id = ld.song_id 
                 AND inner_ld.day <= ld.day
+            );
+        ")?;
+        Ok(())
+    }
+
+    fn apply10changes(conn: &Connection) -> rusqlite::Result<()> {
+        conn.execute_batch("
+            CREATE TABLE lyrics (
+                song_id INTEGER PRIMARY KEY,
+                content TEXT NOT NULL,       -- Serialized lyrics as JSON
+                is_synced BOOLEAN,
+                last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE
             );
         ")?;
         Ok(())
