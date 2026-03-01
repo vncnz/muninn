@@ -130,6 +130,7 @@ impl MprisManager {
             let Some(active_player) = active else {
                 if cumulative_time > 0.0 {
                     let mut store = self.shared_store.lock().expect("StatsStore poisoned");
+                    eprintln!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().hash, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
                     store.increase_time(current.as_ref().unwrap().id.unwrap(), cumulative_time).expect("Impossible to update time");
                     cumulative_time = 0.0;
                 }
