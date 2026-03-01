@@ -36,12 +36,19 @@ function App() {
   useEffect(() => {
     // Subscribe once
     const unlisten = listen<string>("mpris-event", (event: any) => {
-      // console.log('evt', event)
-      let evt = event.payload as SongPlaying
-      // console.log('mpris', evt)
-      // let s = songBuilder(evt)
-      // let songkey = stripDuration(evt)
-      setSong(evt)
+
+      let evttype = event.payload.resource
+      if (evttype === 'playing') {
+
+        // console.log('evt', event)
+        let evt = event.payload.data as SongPlaying
+        // console.log('mpris', evt)
+        // let s = songBuilder(evt)
+        // let songkey = stripDuration(evt)
+        setSong(evt)
+      } else if (evttype === 'daemon') {
+        // TODO
+      }
     });
 
     console.log("Suscribed")

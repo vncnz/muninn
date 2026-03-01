@@ -5,6 +5,10 @@ use shared::{AlbumStats, ArtistHistoryStats, ArtistStats, SharedStats, SharedSto
 use std::collections::HashMap;
 use tauri::{Emitter, Manager};
 
+mod sock_listener;
+use crate::sock_listener::ListenerSocket;
+use std::time::Duration;
+
 /* impl Drop for StatsStore {
     fn drop(&mut self) {
         eprintln!("DROP2");
@@ -84,7 +88,7 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             // let manager = Arc::new(Mutex::new(MprisManager::new()));
-            // let app_handle = app.handle().clone();
+            let app_handle = app.handle().clone();
 
             let data_dir = app
                 .path()
@@ -101,6 +105,19 @@ pub fn run() {
 
             // Register as global state
             app.manage(store.clone());
+
+            let mut sock = ListenerSocket::new("/tmp/muninn.sock");
+
+            std::thread::spawn(move || {
+                loop {
+                    sock.poll_messages();
+                    if let Ok(data) = sock.rx.try_recv() {
+                        eprintln!("New event {:?}", data);
+                        let _ = app_handle.emit("mpris-event", data);
+                    }
+                    std::thread::sleep(Duration::from_millis(50));
+                }
+            });
 
             // let stats_clone = stats.clone();
 

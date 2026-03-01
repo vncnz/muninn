@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::{Arc, Mutex, RwLock}};
 
-use serde::{Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::database::StatsStore;
 
@@ -22,13 +22,13 @@ pub struct SongStats {
     pub(crate) time: f64
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SongPlaying {
     pub metadata: Song,
     pub position: f64
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Artist {
     pub id: Option<i32>,
     pub name: String
@@ -63,7 +63,7 @@ pub struct ArtistHistoryStats {
     pub listened_time: f64
 }
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Song {
     pub id: Option<i32>,
     pub hash: String,

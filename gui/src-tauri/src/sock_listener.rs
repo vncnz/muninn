@@ -1,0 +1,114 @@
+use std::sync::mpsc::{Sender,Receiver,channel};
+use std::os::unix::net::UnixStream;
+use std::io::Read;
+use serde::{Serialize,Deserialize};
+use shared::SongPlaying;
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct EventMsg {
+    pub resource: String,
+    pub data: Option<SongPlaying> // Option<serde_json::Value>
+}
+
+pub struct ListenerSocket {
+    stream: Option<UnixStream>,
+    path: &'static str,
+    tx: Sender<EventMsg>,
+    pub rx: Receiver<EventMsg>,
+    recv_buf: String,
+}
+
+impl ListenerSocket {
+    pub fn new(path: &'static str) -> Self {
+        let (tx, rx) = channel();
+        Self { stream: None, path, tx, rx, recv_buf: "".to_string() }
+    }
+
+    pub fn try_connect(&mut self) {
+        if self.stream.is_some() {
+            return;
+        }
+
+        match UnixStream::connect(self.path) {
+            Ok(stream) => {
+                println!("Daemon connected");
+                stream.set_nonblocking(true).ok();
+                self.stream = Some(stream);
+                let _ = self.tx.send(EventMsg {
+                    resource: "daemon".to_string(),
+                    data: None
+                });
+            }
+            Err(_) => {
+                // non connesso, riproveremo
+            }
+        }
+    }
+
+    pub fn poll_messages(&mut self) {
+        if let Some(stream) = self.stream.as_mut() {
+            let mut buf = [0u8; 4096];
+            match stream.read(&mut buf) {
+                Ok(0) => {
+                    println!("Daemon disconnected");
+                    let _ = self.tx.send(EventMsg {
+                        resource: "daemon".to_string(),
+                        data: None
+                    });
+                    self.stream = None;
+                }
+                Ok(n) => {
+                    if let Ok(chunk) = std::str::from_utf8(&buf[..n]) {
+                        // aggiunge al buffer cumulativo
+                        self.recv_buf.push_str(chunk);
+
+                        // finché trovi un newline, estrai un messaggio completo
+                        while let Some(pos) = self.recv_buf.find('\n') {
+                            let msg = self.recv_buf[..pos].trim();
+                            if !msg.is_empty() {
+                                if let Ok(data) = serde_json::from_str::<SongPlaying>(msg) {
+                                    let evt = EventMsg {
+                                        resource: "playing".to_string(),
+                                        data: Some(data)
+                                    };
+                                    let _ = self.tx.send(evt);
+                                } else {
+                                    eprintln!("Invalid JSON fragment: {msg}");
+                                }
+                            }
+                            // rimuove la parte processata
+                            self.recv_buf.drain(..=pos);
+                        }
+                    }
+                }
+                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    // nessun dato nuovo
+                }
+                Err(e) => {
+                    eprintln!("Errore socket: {e}");
+                    self.stream = None;
+                }
+            }
+        } else {
+            self.try_connect();
+        }
+    }
+
+}
+
+/*
+Usage example:
+
+let mut sock = RatatoskrSocket::new("/tmp/ratatoskr.sock");
+
+... and in the main loop ...
+
+sock.poll_messages();
+if let Ok(data) = sock.rx.try_recv() {
+    if data.resource == "DESIRED" {
+        if let Some(info) = &data.data {
+            let some_number = info["key"].as_f64();
+        }
+    }
+}
+ */
