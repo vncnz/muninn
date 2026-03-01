@@ -11,7 +11,7 @@ pub struct StatsStore {
     conn: rusqlite::Connection,
 }
 
-const CURRENT_DB_VERSION: i32 = 9;
+const CURRENT_DB_VERSION: i32 = 10;
 impl StatsStore {
     pub fn new(app_dir: &Path) -> rusqlite::Result<Self> {
         // let conn = Connection::open_in_memory()?;
@@ -141,6 +141,32 @@ impl StatsStore {
                 FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE
             );
         ")?;
+        Ok(())
+    }
+
+    pub fn get_lyrics_by_song_id(&self, song_id: i32) -> Result<(String, bool)> {
+        let lyrics: (String, bool) = self.conn.query_row("
+            SELECT
+                l.content,
+                l.is_synced
+            FROM lyrics l
+            where l.song_id = ?
+        ", [song_id], |row| Ok((row.get(0)?, row.get(1)?)) )?;
+        Ok(lyrics)
+    }
+
+    pub fn insert_lyrics(& mut self, songid: i32, lyrics: String, synced: bool) -> Result<(), rusqlite::Error> {
+        let tx = self.conn.transaction()?;
+
+        tx.execute(
+            r#"
+                INSERT INTO lyrics (song_id, content, is_synced)
+                values (?1, ?2, ?3)
+                ON CONFLICT(song_id) DO NOTHING
+            "#,
+            params![ songid, lyrics, synced],
+        )?;
+        tx.commit()?;
         Ok(())
     }
 

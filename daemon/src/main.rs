@@ -32,6 +32,7 @@ fn main() {
 
     let db_path = expand_tilde(Path::new("~/.local/share/com.vncnz.muninn/stats.sqlite"));
     let store: SharedStore = Arc::new(Mutex::new(StatsStore::new(&db_path).expect("Impossible to create database")));
+    let store2 = store.clone();
     let (tx_playing, rx_playing): (Sender<SongPlaying>, Receiver<SongPlaying>) = mpsc::channel();
 
     let tx = start_socket_dispatcher("/tmp/muninn.sock").ok();
@@ -47,38 +48,50 @@ fn main() {
     let mut last_song_id: Option<i32> = None;
     let mut last_lyrics = Lyrics::new();
     while let Ok(song) = rx_playing.recv() {
-        // println!("updated mpris {}", song.metadata.title);
-        let song_clone = song.clone();
+        if let Some(song_id) = song.metadata.id {
 
-        // Lyrics stuff
-        let changed = song.metadata.id != last_song_id;
-        if changed {
-            last_song_id = song.metadata.id;
-            if let Some(arts) = song.metadata.artists {
-                let raw_artist = arts.iter().map(|s| s.name.clone()).collect::<Vec<String>>().join(",");
-                let maybe_server_response = get_song_blocking(&song.metadata.title, &raw_artist, &song.metadata.album, song.metadata.length.into());
-                let status = last_lyrics.apply_song_text(maybe_server_response);
-                match status {
-                    Ok(s) => {
-                        println!("{s}");
-                        // TODO: save!
-                    },
-                    Err(s) => {
-                        println!("text status {s}");
+            // println!("updated mpris {}", song.metadata.title);
+            let song_clone = song.clone();
+
+            // Lyrics stuff
+            let changed = song.metadata.id != last_song_id;
+            let mut to_be_load = false;
+            if let Ok((lyrics, synced)) = store2.lock().unwrap().get_lyrics_by_song_id(song_id) {
+                println!("Yes lyrics in db");
+            } else {
+                println!("No lyrics in db");
+                to_be_load = true;
+            }
+            if changed && to_be_load {
+                last_song_id = song.metadata.id;
+                if let Some(arts) = song.metadata.artists {
+                    let raw_artist = arts.iter().map(|s| s.name.clone()).collect::<Vec<String>>().join(",");
+                    let maybe_server_response = get_song_blocking(&song.metadata.title, &raw_artist, &song.metadata.album, song.metadata.length.into());
+                    let status = last_lyrics.apply_song_text(maybe_server_response);
+                    match status {
+                        Ok(s) => {
+                            println!("{s}");
+                            if let Err(err) = store2.lock().unwrap().insert_lyrics(song_id, s, true) {
+                                eprint!("Error inserting lyrics in the database {err}");
+                            }
+                        },
+                        Err(s) => {
+                            println!("text status {s}");
+                        }
                     }
                 }
             }
-        }
 
-        // GUI notification
-        let json_val_result = serde_json::to_value(song_clone);
-        if let Ok(json_val) = json_val_result {
-            if !send(json_val, tx.clone()) {
-                eprintln!("Dispatcher terminato, chiudo thread e muoio");
-                break;
+            // GUI notification
+            let json_val_result = serde_json::to_value(song_clone);
+            if let Ok(json_val) = json_val_result {
+                if !send(json_val, tx.clone()) {
+                    eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                    break;
+                }
+            } else {
+                eprintln!("Error converting song:PlayingData to json");
             }
-        } else {
-            eprintln!("Error converting song:PlayingData to json");
         }
     }
     println!("Exiting");
