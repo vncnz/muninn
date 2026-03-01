@@ -1,7 +1,6 @@
-use std::sync::{Arc, Mutex, mpsc};
-use std::sync::mpsc::{Sender,Receiver};
+use std::sync::{Arc, Mutex};
 use shared::database::StatsStore;
-use shared::{AlbumStats, ArtistHistoryStats, ArtistStats, SharedStats, SharedStore, Song, SongHistoryStats, SongStats, SongPlaying};
+use shared::{AlbumStats, ArtistHistoryStats, ArtistStats, SharedStats, SharedStore, Song, SongHistoryStats, SongStats};
 use std::collections::HashMap;
 use tauri::{Emitter, Manager};
 

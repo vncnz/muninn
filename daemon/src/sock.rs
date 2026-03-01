@@ -1,7 +1,5 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
-use chrono::Utc;
 
 use std::fs;
 
