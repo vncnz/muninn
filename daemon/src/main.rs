@@ -42,7 +42,7 @@ fn main() {
     } */
    while let Ok(song) = rx_playing.recv() {
         // let _ = app_handle.emit("mpris-event", song);
-        println!("updated mpris {}", song.metadata.title);
+        // println!("updated mpris {}", song.metadata.title);
         let json_val_result = serde_json::to_value(song);
         if let Ok(json_val) = json_val_result {
             if !send(json_val, tx.clone()) {
