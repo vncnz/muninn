@@ -28,3 +28,79 @@ pub fn get_song_blocking(title: &str, art: &str, alb: &str, dur: f64) -> Result<
     resp
     // reqwest::blocking::get(url).text()?
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use anyhow::{Context, Result};
+use serde::Deserialize;
+use reqwest::blocking::Client;
+
+// 1. Rappresentazione del JSON restituito dalle API
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct LrcResponse {
+    pub id: u32,
+    pub name: String,
+    pub track_name: Option<String>,
+    pub artist_name: Option<String>,
+    pub album_name: Option<String>,
+    pub duration: Option<f64>,
+    pub synced_lyrics: Option<String>, // Quello che ci serve
+    pub plain_lyrics: Option<String>,
+}
+
+// 2. Helper per impacchettare i parametri di ricerca
+pub struct LrcQuery<'a> {
+    pub artist: &'a str,
+    pub title: &'a str,
+    pub album: &'a str,
+    pub duration: u32,
+}
+
+pub fn fetch_synced_lyrics(query: LrcQuery) -> Result<String> {
+    let client = Client::builder()
+        .user_agent("Muninn/1.0 (vncnz on GitHub)") 
+        .build()?;
+
+    // Costruiamo l'URL in modo sicuro gestendo l'encoding dei caratteri speciali
+    let url = "https://lrclib.net/api/get";
+    
+    let response = client
+        .get(url)
+        .query(&[
+            ("artist_name", query.artist),
+            ("track_name", query.title),
+            ("album_name", query.album),
+            ("duration", &query.duration.to_string()),
+        ])
+        .send()
+        .context("LRCLIB Request error")?;
+
+    // Gestione degli stati HTTP non 200 (es. 404 se non trova nulla)
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
+        return Err(anyhow::anyhow!("Testo non trovato per questo brano"));
+    }
+
+    let data: LrcResponse = response
+        .error_for_status()? // Converte errori 4xx/5xx in Result::Err
+        .json()
+        .context("Error in JSON parsing")?;
+
+    // Estraiamo i testi sincronizzati, gestendo il caso in cui siano null/assenti
+    data.synced_lyrics
+        .ok_or_else(|| anyhow::anyhow!("Track ok but with no synced lyrics"))
+}

@@ -14,6 +14,8 @@ mod sock;
 use crate::lyrics::Lyrics;
 use crate::sock::send;
 use crate::sock::start_socket_dispatcher;
+use crate::utils::LrcQuery;
+use crate::utils::fetch_synced_lyrics;
 use crate::utils::get_song_blocking;
 
 mod utils;
@@ -50,52 +52,55 @@ fn main() {
 
 fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>>, tx: Option<Sender<String>>) {
     let mut last_song_id: Option<i32> = None;
-    let mut last_lyrics = Lyrics::new();
+    // let mut last_lyrics = Lyrics::new();
     while let Ok(song) = rx_playing.recv() {
         if let Some(song_id) = song.metadata.id {
-
-            // println!("updated mpris {}", song.metadata.title);
             let song_clone = song.clone();
 
             // Lyrics stuff
             let changed = song.metadata.id != last_song_id;
             last_song_id = song.metadata.id;
-            let mut to_be_load = false;
             if changed {
-                if let Ok((lyrics, _synced)) = store2.lock().unwrap().get_lyrics_by_song_id(song_id) {
+                let read = store2.lock().unwrap().get_lyrics_by_song_id(song_id);
+                if let Ok((lyrics, _synced)) = read {
+                    println!("Lyrics found in the database");
                     if !send_string_to_socket("lyrics".to_string(), lyrics, tx.clone().unwrap().clone()) {
                         break;
                     }
-                    println!("Yes lyrics in db");
                 } else {
-                    println!("No lyrics in db");
-                    to_be_load = true;
-                }
+                    println!("No lyrics in the database");
 
-                if to_be_load {
                     if let Some(arts) = song.metadata.artists {
                         let raw_artist = arts.iter().map(|s| s.name.clone()).collect::<Vec<String>>().join(",");
-                        let maybe_server_response = get_song_blocking(&song.metadata.title, &raw_artist, &song.metadata.album, song.metadata.length.into());
-                        let status = last_lyrics.apply_song_text(maybe_server_response);
-                        match status {
-                            Ok((s, synced)) => {
-                                println!("Lyrics downloaded");
-                                if let Err(err) = store2.lock().unwrap().insert_lyrics(song_id, s.clone(), synced) {
-                                    eprint!("Error inserting lyrics in the database {err}");
+
+                        let resp = fetch_synced_lyrics(LrcQuery {
+                            artist: &raw_artist,
+                            title: &song.metadata.title,
+                            album: &song.metadata.album,
+                            duration: song.metadata.length as u32
+                        });
+
+                        // eprintln!("{:?}", resp);
+
+                        match resp {
+                            Ok(lyrics) => {
+                                eprintln!("About to insert");
+                                if let Err(err) = store2.lock().unwrap().insert_lyrics(song_id, lyrics.clone(), true) {
+                                    eprintln!("Error inserting lyrics in the database {err}");
                                 } else {
                                     eprintln!("Lyrics inserted in the database");
                                 }
-                                if !send_string_to_socket("lyrics".to_string(), s, tx.clone().unwrap().clone()) {
+                                if !send_string_to_socket("lyrics".to_string(), lyrics, tx.clone().unwrap().clone()) {
                                     break;
                                 }
                             },
-                            Err(s) => {
-                                println!("text status {s}");
+                            Err(err) => {
+                                eprintln!("{:?}", err);
                             }
                         }
+                    } else {
+                        eprintln!("No artists");
                     }
-                } else {
-                    println!("Lyrics already in db, skipping load");
                 }
             }
 
@@ -103,7 +108,7 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
             let json_val_result = serde_json::to_value(song_clone);
             if let Ok(json_val) = json_val_result {
                 if !send_string_to_socket("playing".to_string(), json_val.to_string(), tx.clone().unwrap().clone()) {
-                    eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                    eprintln!("Dispatcher terminated, exiting...");
                     break;
                 }
             } else {
