@@ -26,4 +26,4 @@ gui/dist
 src-tauri/Cargo.lock
 gui/node_modules
 src-tauri/gen/schemas
-gui/src-tauri/Cargo.lock
+*Cargo.lock
