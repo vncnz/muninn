@@ -23,5 +23,6 @@ target
 pnpm-lock.yaml
 /dist
 gui/dist
-gui/src-tauri/Cargo.lock
+src-tauri/Cargo.lock
 gui/node_modules
+src-tauri/gen/schemas
