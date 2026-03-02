@@ -110,3 +110,9 @@ impl Song {
 
 pub type SharedStats = Arc<RwLock<HashMap<String, SongStats>>>;
 pub type SharedStore = Arc<Mutex<StatsStore>>;
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct SocketEventMsg {
+    pub resource: String,
+    pub data: Option<serde_json::Value> // Option<SongPlaying>
+}

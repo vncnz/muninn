@@ -1,20 +1,14 @@
 use std::sync::mpsc::{Sender,Receiver,channel};
 use std::os::unix::net::UnixStream;
 use std::io::Read;
-use serde::{Serialize,Deserialize};
-use shared::SongPlaying;
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct EventMsg {
-    pub resource: String,
-    pub data: Option<SongPlaying> // Option<serde_json::Value>
-}
-
+use shared::SocketEventMsg;
+// use serde::{Serialize,Deserialize};
+// use shared::{SocketEventMsg, SongPlaying};
 pub struct ListenerSocket {
     stream: Option<UnixStream>,
     path: &'static str,
-    tx: Sender<EventMsg>,
-    pub rx: Receiver<EventMsg>,
+    tx: Sender<SocketEventMsg>,
+    pub rx: Receiver<SocketEventMsg>,
     recv_buf: String,
 }
 
@@ -34,7 +28,7 @@ impl ListenerSocket {
                 println!("Daemon connected");
                 stream.set_nonblocking(true).ok();
                 self.stream = Some(stream);
-                let _ = self.tx.send(EventMsg {
+                let _ = self.tx.send(SocketEventMsg {
                     resource: "daemon".to_string(),
                     data: None
                 });
@@ -51,7 +45,7 @@ impl ListenerSocket {
             match stream.read(&mut buf) {
                 Ok(0) => {
                     println!("Daemon disconnected");
-                    let _ = self.tx.send(EventMsg {
+                    let _ = self.tx.send(SocketEventMsg {
                         resource: "daemon".to_string(),
                         data: None
                     });
@@ -66,12 +60,17 @@ impl ListenerSocket {
                         while let Some(pos) = self.recv_buf.find('\n') {
                             let msg = self.recv_buf[..pos].trim();
                             if !msg.is_empty() {
-                                if let Ok(data) = serde_json::from_str::<SongPlaying>(msg) {
-                                    let evt = EventMsg {
+                                /* if let Ok(data) = serde_json::from_str::<SongPlaying>(msg) {
+                                    let evt = SocketEventMsg {
                                         resource: "playing".to_string(),
                                         data: Some(data)
                                     };
                                     let _ = self.tx.send(evt);
+                                } else {
+                                    eprintln!("Invalid JSON fragment: {msg}");
+                                } */
+                                if let Ok(data) = serde_json::from_str::<SocketEventMsg>(msg) {
+                                    let _ = self.tx.send(data);
                                 } else {
                                     eprintln!("Invalid JSON fragment: {msg}");
                                 }

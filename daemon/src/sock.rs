@@ -63,31 +63,23 @@ pub fn start_socket_dispatcher(
     Ok(tx)
 }
 
-pub fn send (value: serde_json::Value, tx: Option<mpsc::Sender<String>>) -> bool {
-    match tx {
-        Some(ttx) => {
-            /*let json_val = serde_json::to_value(&value).unwrap_or_default();
+pub fn send (value: serde_json::Value, tx: mpsc::Sender<String>) -> bool {
+    /*let json_val = serde_json::to_value(&value).unwrap_or_default();
 
-            let msg = serde_json::json!({
-                "resource": name,
-                "warning": warn,
-                "icon": icon,
-                "data": serde_json::to_value(&value).unwrap()
-            });*/
-            let json = value.to_string();
-            // let json = serde_json::to_string(&value).unwrap();
-    
-            if ttx.clone().send(json).is_err() {
-                false
-            } else {
-                true
-            }
-        },
-        _ => {
-            false
-        }
+    let msg = serde_json::json!({
+        "resource": name,
+        "warning": warn,
+        "icon": icon,
+        "data": serde_json::to_value(&value).unwrap()
+    });*/
+    let json = value.to_string();
+    // let json = serde_json::to_string(&value).unwrap();
+
+    if tx.clone().send(json).is_err() {
+        false
+    } else {
+        true
     }
-
 }
 
 

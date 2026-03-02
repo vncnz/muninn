@@ -1,4 +1,6 @@
 use std::sync::{Arc, Mutex, mpsc};
+use serde_json::Value;
+use shared::SocketEventMsg;
 use shared::mpris_manager::MprisManager;
 use std::sync::mpsc::{Sender,Receiver};
 use shared::database::StatsStore;
@@ -55,39 +57,60 @@ fn main() {
 
             // Lyrics stuff
             let changed = song.metadata.id != last_song_id;
+            last_song_id = song.metadata.id;
             let mut to_be_load = false;
-            if let Ok((lyrics, synced)) = store2.lock().unwrap().get_lyrics_by_song_id(song_id) {
-                println!("Yes lyrics in db");
-            } else {
-                println!("No lyrics in db");
-                to_be_load = true;
-            }
-            if changed && to_be_load {
-                last_song_id = song.metadata.id;
-                if let Some(arts) = song.metadata.artists {
-                    let raw_artist = arts.iter().map(|s| s.name.clone()).collect::<Vec<String>>().join(",");
-                    let maybe_server_response = get_song_blocking(&song.metadata.title, &raw_artist, &song.metadata.album, song.metadata.length.into());
-                    let status = last_lyrics.apply_song_text(maybe_server_response);
-                    match status {
-                        Ok(s) => {
-                            println!("{s}");
-                            if let Err(err) = store2.lock().unwrap().insert_lyrics(song_id, s, true) {
-                                eprint!("Error inserting lyrics in the database {err}");
+            if changed {
+                if let Ok((lyrics, _synced)) = store2.lock().unwrap().get_lyrics_by_song_id(song_id) {
+                    if !send_lyrics(lyrics, tx.clone().unwrap().clone()) {
+                        break;
+                    }
+                    println!("Yes lyrics in db");
+                } else {
+                    println!("No lyrics in db");
+                    to_be_load = true;
+                }
+
+                if to_be_load {
+                    if let Some(arts) = song.metadata.artists {
+                        let raw_artist = arts.iter().map(|s| s.name.clone()).collect::<Vec<String>>().join(",");
+                        let maybe_server_response = get_song_blocking(&song.metadata.title, &raw_artist, &song.metadata.album, song.metadata.length.into());
+                        let status = last_lyrics.apply_song_text(maybe_server_response);
+                        match status {
+                            Ok(s) => {
+                                println!("Lyrics downloaded");
+                                if let Err(err) = store2.lock().unwrap().insert_lyrics(song_id, s.clone(), true) {
+                                    eprint!("Error inserting lyrics in the database {err}");
+                                } else {
+                                    eprintln!("Lyrics inserted in the database");
+                                }
+                                if !send_lyrics(s, tx.clone().unwrap().clone()) {
+                                    break;
+                                }
+                            },
+                            Err(s) => {
+                                println!("text status {s}");
                             }
-                        },
-                        Err(s) => {
-                            println!("text status {s}");
                         }
                     }
+                } else {
+                    println!("Lyrics already in db, skipping load");
                 }
             }
 
             // GUI notification
             let json_val_result = serde_json::to_value(song_clone);
             if let Ok(json_val) = json_val_result {
-                if !send(json_val, tx.clone()) {
-                    eprintln!("Dispatcher terminato, chiudo thread e muoio");
-                    break;
+                let msg_obj = SocketEventMsg {
+                    resource: "playing".to_string(),
+                    data: Some(json_val)
+                };
+                if let Ok(msg) = serde_json::to_value(msg_obj) {
+                    if !send(msg, tx.clone().unwrap().clone()) {
+                        eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                        break;
+                    }
+                } else {
+                    eprintln!("Can't serialize msg_obj")
                 }
             } else {
                 eprintln!("Error converting song:PlayingData to json");
@@ -95,4 +118,23 @@ fn main() {
         }
     }
     println!("Exiting");
+}
+
+fn send_lyrics (lyrics: String, tx: Sender<String>) -> bool {
+    let json_val_result = serde_json::to_value(lyrics);
+    if let Ok(json_val) = json_val_result {
+        let msg_obj = SocketEventMsg {
+            resource: "lyrics".to_string(),
+            data: Some(json_val)
+        };
+        if let Ok(msg) = serde_json::to_value(msg_obj) {
+            if !send(msg, tx) {
+                eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                return false;
+            }
+        } else {
+            eprintln!("Can't serialize msg_obj for lyrics")
+        }
+    }
+    return true;
 }

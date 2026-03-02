@@ -48,6 +48,9 @@ function App() {
         setSong(evt)
       } else if (evttype === 'daemon') {
         // TODO
+      } else if (evttype === 'lyrics') {
+        // TODO
+        console.log('lyrics evt', event.payload.data)
       }
     });
 
