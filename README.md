@@ -32,11 +32,16 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - ~~Add time ranges (today, 7d, 30d, all)~~
 - ~~Stats by album~~
 - ~~Song length update when wrong in the first mpris event~~
-- - ~~Add filter feature (by title, by artist, etc.)~~
+- ~~Add filter feature (by title, by artist, etc.)~~
 - ~~Limit number of results shown in stats (top 10, top 25, top 50, something like that)~~
-- RE-ENGINEERING: split the project into two parts: a daemon and a client/UI
+- ~~New layout~~
+- RE-ENGINEERING: split the project into two parts: a daemon and a client/UI - Doing!
+    - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
+    - ~~Give to the daemon the responsability for lyrics downloading and sending~~
+    - Send lyrics to gui on connection too
+    - Wait 30s before lyrics downloading at the first time
+    - Wait 60s before lyrics writing on db at the first time
 - Fix song length even after the first event of a song playing
-- New layout (see below)
 - Make filters resistent to stats type change
 - Flush current song when closing app
 - Add history graph for artists
@@ -47,10 +52,6 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - Add comparisons between different time ranges stats (current vs previous)? (partially replaced by history charts?)
 - Add the ability to reset a song counter or ignore a song/artist
 - Add the ability to merge one song listening time into another
-
-### New layout (TODO)
-- Tabs for mode selection: one view if using halfscreen, two views if using fullscreen
-- Three available views: lyrics, rankings, history graphs
 
 ## Recommended IDE Setup
 
