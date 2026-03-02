@@ -1,14 +1,20 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
-
+use std::sync::mpsc::Sender;
 use std::fs;
 
 use std::sync::mpsc;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::io::Write;
+use std::time::Duration;
+
+use shared::SocketEventMsg;
+
+use crate::SharedState;
 
 pub fn start_socket_dispatcher(
-    sock_path: &str
+    sock_path: &str,
+    shared_state: Arc<Mutex<SharedState>>
 ) -> std::io::Result<mpsc::Sender<String>> {
     let _ = fs::remove_file(sock_path);
     let listener = UnixListener::bind(sock_path)?;
@@ -17,7 +23,7 @@ pub fn start_socket_dispatcher(
 
     let (tx, rx) = mpsc::channel::<String>();
     let clients_accept = Arc::clone(&clients);
-    // let tx_clone = tx.clone();
+    let tx_clone = tx.clone();
 
     // Thread che accetta nuovi client
     thread::spawn(move || {
@@ -28,11 +34,16 @@ pub fn start_socket_dispatcher(
                     stream.set_nonblocking(true).ok();
                     clients_accept.lock().unwrap().push(stream);
                     // println!("About to lock s and send burst");
-                    /* if let Ok(data) = s.lock() {
-                        // thread::sleep(Duration::from_millis(2000));
-                        send_burst(&data, tx_clone.clone());
+                    if let Ok(data) = shared_state.lock().unwrap().last_lyrics.clone().ok_or_else(|| "No lyrics".to_string()) {
+                        eprintln!("Sending burst with last lyrics");
+                        thread::sleep(Duration::from_millis(2000));
+                        // send(serde_json::Value::String(data), tx_clone.clone());
                         // tx_clone.send("burst".into()).ok();
-                    } */
+                        if !send_string_to_socket("lyrics".to_string(), data, tx_clone.clone()) {
+                            eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                            break;
+                        }
+                    }
                 }
                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                     thread::sleep(std::time::Duration::from_millis(100));
@@ -82,10 +93,21 @@ pub fn send (value: serde_json::Value, tx: mpsc::Sender<String>) -> bool {
     }
 }
 
-
-/*
-if !send($name.to_string(), json_val, tx.clone()) {
-    eprintln!("Dispatcher terminato, chiudo thread di {}", $name);
-    break;
+pub fn send_string_to_socket (resource: String, lyrics: String, tx: Sender<String>) -> bool {
+    let json_val_result = serde_json::to_value(lyrics);
+    if let Ok(json_val) = json_val_result {
+        let msg_obj = SocketEventMsg {
+            resource: resource.clone(),
+            data: Some(json_val)
+        };
+        if let Ok(msg) = serde_json::to_value(msg_obj) {
+            if !send(msg, tx) {
+                eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                return false;
+            }
+        } else {
+            eprintln!("Can't serialize msg_obj for {resource}")
+        }
+    }
+    return true;
 }
-*/

@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex, mpsc};
-use serde_json::Value;
 use shared::SocketEventMsg;
 use shared::mpris_manager::MprisManager;
 use std::sync::mpsc::{Sender,Receiver};
@@ -11,12 +10,10 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 mod sock;
-use crate::lyrics::Lyrics;
-use crate::sock::send;
+use crate::sock::send_string_to_socket;
 use crate::sock::start_socket_dispatcher;
 use crate::utils::LrcQuery;
 use crate::utils::fetch_synced_lyrics;
-use crate::utils::get_song_blocking;
 
 mod utils;
 mod lyrics;
@@ -39,19 +36,25 @@ fn main() {
     let store2 = store.clone();
     let (tx_playing, rx_playing): (Sender<SongPlaying>, Receiver<SongPlaying>) = mpsc::channel();
 
-    let tx = start_socket_dispatcher("/tmp/muninn.sock").ok();
+    let shared_state = Arc::new(Mutex::new(SharedState { last_lyrics: None }));
+    let tx = start_socket_dispatcher("/tmp/muninn.sock", shared_state.clone()).ok();
 
     // Background listener
     std::thread::spawn(move || {
         MprisManager::new(store).start_listening(tx_playing);
     });
 
-    daemon_loop(rx_playing, store2, tx);
+    daemon_loop(rx_playing, store2, tx, shared_state);
     println!("Exiting");
 }
 
-fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>>, tx: Option<Sender<String>>) {
+struct SharedState {
+    last_lyrics: Option<String>,
+}
+
+fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>>, tx: Option<Sender<String>>, shared_state: Arc<Mutex<SharedState>>) {
     let mut last_song_id: Option<i32> = None;
+    
     // let mut last_lyrics = Lyrics::new();
     while let Ok(song) = rx_playing.recv() {
         if let Some(song_id) = song.metadata.id {
@@ -64,6 +67,7 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
                 let read = store2.lock().unwrap().get_lyrics_by_song_id(song_id);
                 if let Ok((lyrics, _synced)) = read {
                     println!("Lyrics found in the database");
+                    shared_state.lock().unwrap().last_lyrics = Some(lyrics.clone());
                     if !send_string_to_socket("lyrics".to_string(), lyrics, tx.clone().unwrap().clone()) {
                         break;
                     }
@@ -90,6 +94,7 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
                                 } else {
                                     eprintln!("Lyrics inserted in the database");
                                 }
+                                shared_state.lock().unwrap().last_lyrics = Some(lyrics.clone());
                                 if !send_string_to_socket("lyrics".to_string(), lyrics, tx.clone().unwrap().clone()) {
                                     break;
                                 }
@@ -116,23 +121,4 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
             }
         }
     }
-}
-
-fn send_string_to_socket (resource: String, lyrics: String, tx: Sender<String>) -> bool {
-    let json_val_result = serde_json::to_value(lyrics);
-    if let Ok(json_val) = json_val_result {
-        let msg_obj = SocketEventMsg {
-            resource: resource.clone(),
-            data: Some(json_val)
-        };
-        if let Ok(msg) = serde_json::to_value(msg_obj) {
-            if !send(msg, tx) {
-                eprintln!("Dispatcher terminato, chiudo thread e muoio");
-                return false;
-            }
-        } else {
-            eprintln!("Can't serialize msg_obj for {resource}")
-        }
-    }
-    return true;
 }

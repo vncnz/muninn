@@ -9,7 +9,7 @@ pub fn log_to_file(msg: String) {
         .expect("impossibile aprire log file");
     writeln!(file, "[{}] {}", chrono::Local::now().format("%H:%M:%S%.3f"), msg).unwrap();
 }
-
+/*
 pub fn to_human (secs: i64) -> String {
     format!("{:02}:{:02}", secs / 60, secs % 60)
 }
@@ -28,7 +28,7 @@ pub fn get_song_blocking(title: &str, art: &str, alb: &str, dur: f64) -> Result<
     resp
     // reqwest::blocking::get(url).text()?
 }
-
+*/
 
 
 
