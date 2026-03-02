@@ -61,7 +61,7 @@ fn main() {
             let mut to_be_load = false;
             if changed {
                 if let Ok((lyrics, _synced)) = store2.lock().unwrap().get_lyrics_by_song_id(song_id) {
-                    if !send_lyrics(lyrics, tx.clone().unwrap().clone()) {
+                    if !send_string_to_socket("lyrics".to_string(), lyrics, tx.clone().unwrap().clone()) {
                         break;
                     }
                     println!("Yes lyrics in db");
@@ -76,14 +76,14 @@ fn main() {
                         let maybe_server_response = get_song_blocking(&song.metadata.title, &raw_artist, &song.metadata.album, song.metadata.length.into());
                         let status = last_lyrics.apply_song_text(maybe_server_response);
                         match status {
-                            Ok(s) => {
+                            Ok((s, synced)) => {
                                 println!("Lyrics downloaded");
-                                if let Err(err) = store2.lock().unwrap().insert_lyrics(song_id, s.clone(), true) {
+                                if let Err(err) = store2.lock().unwrap().insert_lyrics(song_id, s.clone(), synced) {
                                     eprint!("Error inserting lyrics in the database {err}");
                                 } else {
                                     eprintln!("Lyrics inserted in the database");
                                 }
-                                if !send_lyrics(s, tx.clone().unwrap().clone()) {
+                                if !send_string_to_socket("lyrics".to_string(), s, tx.clone().unwrap().clone()) {
                                     break;
                                 }
                             },
@@ -100,17 +100,9 @@ fn main() {
             // GUI notification
             let json_val_result = serde_json::to_value(song_clone);
             if let Ok(json_val) = json_val_result {
-                let msg_obj = SocketEventMsg {
-                    resource: "playing".to_string(),
-                    data: Some(json_val)
-                };
-                if let Ok(msg) = serde_json::to_value(msg_obj) {
-                    if !send(msg, tx.clone().unwrap().clone()) {
-                        eprintln!("Dispatcher terminato, chiudo thread e muoio");
-                        break;
-                    }
-                } else {
-                    eprintln!("Can't serialize msg_obj")
+                if !send_string_to_socket("playing".to_string(), json_val.to_string(), tx.clone().unwrap().clone()) {
+                    eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                    break;
                 }
             } else {
                 eprintln!("Error converting song:PlayingData to json");
@@ -120,11 +112,11 @@ fn main() {
     println!("Exiting");
 }
 
-fn send_lyrics (lyrics: String, tx: Sender<String>) -> bool {
+fn send_string_to_socket (resource: String, lyrics: String, tx: Sender<String>) -> bool {
     let json_val_result = serde_json::to_value(lyrics);
     if let Ok(json_val) = json_val_result {
         let msg_obj = SocketEventMsg {
-            resource: "lyrics".to_string(),
+            resource: resource.clone(),
             data: Some(json_val)
         };
         if let Ok(msg) = serde_json::to_value(msg_obj) {
@@ -133,7 +125,7 @@ fn send_lyrics (lyrics: String, tx: Sender<String>) -> bool {
                 return false;
             }
         } else {
-            eprintln!("Can't serialize msg_obj for lyrics")
+            eprintln!("Can't serialize msg_obj for {resource}")
         }
     }
     return true;

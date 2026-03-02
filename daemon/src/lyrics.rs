@@ -82,7 +82,7 @@ impl Lyrics {
         false
     } */
 
-    pub fn apply_song_text (&mut self, maybe_server_response: Result<String, reqwest::Error>) -> Result<String, String> {
+    pub fn apply_song_text (&mut self, maybe_server_response: Result<String, reqwest::Error>) -> Result<(String, bool), String> {
         // TODO Manage the case syncedLyrics is null and plainLyrics is not null
         let mut status: String = String::new();
 
@@ -102,7 +102,7 @@ impl Lyrics {
                         status = "Lyrics loaded and parsed successfully".into();
                         log_to_file(status.clone());
                         self.status = LyricsState::Loaded;
-                        return Ok(unformatted_text.to_string());
+                        return Ok((unformatted_text.to_string(), true));
                     } else {
                         status = "Something's wrong (1)".into();
                         log_to_file(status.clone());
