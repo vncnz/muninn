@@ -30,7 +30,7 @@ impl ListenerSocket {
                 self.stream = Some(stream);
                 let _ = self.tx.send(SocketEventMsg {
                     resource: "daemon".to_string(),
-                    data: None
+                    data: Some(serde_json::json!({"disconnected": false}))
                 });
             }
             Err(_) => {
@@ -47,7 +47,7 @@ impl ListenerSocket {
                     println!("Daemon disconnected");
                     let _ = self.tx.send(SocketEventMsg {
                         resource: "daemon".to_string(),
-                        data: None
+                        data: Some(serde_json::json!({"disconnected": true}))
                     });
                     self.stream = None;
                 }

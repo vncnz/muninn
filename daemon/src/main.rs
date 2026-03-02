@@ -44,9 +44,11 @@ fn main() {
         MprisManager::new(store).start_listening(tx_playing);
     });
 
-    /* loop {
-        thread::sleep(Duration::from_millis(500));
-    } */
+    daemon_loop(rx_playing, store2, tx);
+    println!("Exiting");
+}
+
+fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>>, tx: Option<Sender<String>>) {
     let mut last_song_id: Option<i32> = None;
     let mut last_lyrics = Lyrics::new();
     while let Ok(song) = rx_playing.recv() {
@@ -109,7 +111,6 @@ fn main() {
             }
         }
     }
-    println!("Exiting");
 }
 
 fn send_string_to_socket (resource: String, lyrics: String, tx: Sender<String>) -> bool {
