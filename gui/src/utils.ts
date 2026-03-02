@@ -1,4 +1,4 @@
-import { Artist } from "./types"
+import { Artist, LyricsRow } from "./types"
 
 export const artistsToString = (artists: Artist[]) => {
     if (!artists) {
@@ -114,4 +114,21 @@ export const getPalette = (size: number) => {
         i += 32
     }
     return arr
+}
+
+export const parseLyricsString = (raw: String) => {
+  let lyricsRows = [] as LyricsRow[];
+  let lines = raw.split("\n");
+  console.log('lines.length', lines.length)
+  for (let line of lines) {
+      let match = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+      if (match) {
+          let minutes = parseInt(match[1]);
+          let seconds = parseFloat(match[2]);
+          let text = match[3].trim();
+          let time = minutes * 60 + seconds;
+          lyricsRows.push({ time: time, text: text });
+      }
+  }
+  return lyricsRows
 }

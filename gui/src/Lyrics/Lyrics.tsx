@@ -1,10 +1,10 @@
 import { useLyrics } from "../providers/LyricsProvider";
-import { SongPlaying } from "../types";
-import { timeToHuman } from "../utils";
+import { LyricsRow, SongPlaying } from "../types";
+import { parseLyricsString, timeToHuman } from "../utils";
 import classes from "./Lyrics.module.scss";
 import { useState, useEffect } from "react";
 
-export function Lyrics({ playing }: { playing: SongPlaying }) {
+export function Lyrics({ playing, raw }: { playing: SongPlaying, raw: String|null }) {
     // const [lyricsData, setLyricsData] = useState(null as LyricsResponse | null)
     // const [loading, setLoading] = useState(false)
     // const [lastLoaded, setLastLoaded] = useState<String|null>(null)
@@ -46,15 +46,24 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
         return () => { cancelled = true; };
     }, [playing]); */
 
-    const { lyrics, loading, loadLyrics } = useLyrics();
-
+    const [lyrics, setDaemonLyrics] = useState<LyricsRow[]|null>(null)
     useEffect(() => {
+        console.log('Raw lyrics updated', raw)
+        if (raw) {
+            const lines = parseLyricsString(raw)
+            setDaemonLyrics(lines)
+        }
+    }, [raw]);
+
+    // const { lyrics, loading, loadLyrics } = useLyrics();
+
+    /* useEffect(() => {
         loadLyrics(playing);
-    }, [playing, loadLyrics]);
+    }, [playing, loadLyrics]); */
 
     useEffect(() => {
-        if (lyrics && lyrics.lyrics.length > 0 && lyrics.lyricsIsTimed) {
-            let selectedRowIdx = lyrics.lyrics.findIndex(line => line.time > playing.position);
+        if (lyrics && lyrics.length > 0) {
+            let selectedRowIdx = lyrics.findIndex(line => line.time > playing.position);
             if (selectedRowIdx !== lastSelectedRowIdx) {
                 setLastSelectedRowIdx(selectedRowIdx);
                 let lineEl = document.querySelector(`.line-${selectedRowIdx}`);
@@ -71,21 +80,22 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
     
 
     let lyricsEls = null
-    if (loading) {
+    /* if (loading) {
         lyricsEls = <div>Loading...</div>
     } else if (lyrics?.errorMessage) {
         lyricsEls = <div>Error: {lyrics.errorMessage}</div>
-    } else if (lyrics?.lyricsIsTimed) {
-        let lastActive = lyrics?.lyrics.reduce((acc, line, idx) => {
+    } else if (lyrics?.lyricsIsTimed) { */
+    if (lyrics) {
+        let lastActive = lyrics.reduce((acc, line, idx) => {
             if (line.time <= playing.position) return idx
             return acc
         }, 0)
-        lyricsEls = lyrics?.lyrics.map((line, idx) => {
+        lyricsEls = lyrics.map((line, idx) => {
             return <div key={idx} className={classes.lyricsLine + ' ' + (line.time <= playing.position ? classes.lyricsLineOld : '') + ' ' + (idx === lastActive ? classes.lyricsLineActive : '') + ` line-${idx}`}>
                 [{timeToHuman(line.time)}] {line.text}
             </div>
         })
-    } else {
+    } /* else {
         lyricsEls = lyrics?.lyrics.map((line, idx) => {
             return <div key={idx} className={classes.lyricsLine}>
                 {line.text}
@@ -93,6 +103,9 @@ export function Lyrics({ playing }: { playing: SongPlaying }) {
         })
     }
     if (!loading && lyrics?.lyrics.length == 0) {
+        lyricsEls = <div>No lyrics found.</div>
+    } */
+    if (!lyrics || lyrics.length == 0) {
         lyricsEls = <div>No lyrics found.</div>
     }
 

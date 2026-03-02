@@ -28,6 +28,7 @@ function App() {
   } as SongPlaying);
 
   const [groupType, setGroupType] = useState('song')
+  const [lyrics, setLyrics] = useState<String|null>(null)
   // const [showHistory, setShowHistory] = useState<null|'songs'|'artists'>('songs')
 
   const [selectedTab, setSelectedTab] = useState<'lyrics'|'ranks'|'graphs1'|'graphs2'>('lyrics')
@@ -37,11 +38,12 @@ function App() {
     // Subscribe once
     const unlisten = listen<string>("mpris-event", (event: any) => {
 
+      console.log('mpris event', event)
       let evttype = event.payload.resource
       if (evttype === 'playing') {
 
         // console.log('evt', event)
-        let evt = event.payload.data as SongPlaying
+        let evt = JSON.parse(event.payload.data) as SongPlaying
         // console.log('mpris', evt)
         // let s = songBuilder(evt)
         // let songkey = stripDuration(evt)
@@ -49,8 +51,7 @@ function App() {
       } else if (evttype === 'daemon') {
         // TODO
       } else if (evttype === 'lyrics') {
-        // TODO
-        console.log('lyrics evt', event.payload.data)
+        setLyrics(event.payload.data)
       }
     });
 
@@ -135,7 +136,7 @@ function App() {
   let buttonSymbol = null
   if (selectedTab === 'lyrics') {
     mainTab = <div className="lyrics-section">
-                <Lyrics playing={song} />
+                <Lyrics playing={song} raw={lyrics} />
               </div>
     buttonSymbol = '∑'
   } else if (selectedTab === 'ranks') {
