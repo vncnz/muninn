@@ -38,7 +38,7 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - RE-ENGINEERING: split the project into two parts: a daemon and a client/UI - Doing!
     - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
     - ~~Give to the daemon the responsability for lyrics downloading and sending~~
-    - Send lyrics to gui on connection too
+    - ~~Send lyrics to gui on connection too~~
     - Wait 30s before lyrics downloading at the first time
     - Wait 60s before lyrics writing on db at the first time
 - Fix song length even after the first event of a song playing
@@ -46,7 +46,6 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - Flush current song when closing app
 - Add history graph for artists
 - Exclude plays without an artist
-- Limit stats refresh during music listening
 - Add search feature (by title, by artist, etc.)
 - Collapse songs belonging to multiple albums when reading statistics from the database?
 - Add comparisons between different time ranges stats (current vs previous)? (partially replaced by history charts?)
