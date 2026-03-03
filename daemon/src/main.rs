@@ -75,6 +75,9 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
             let changed = song.metadata.id != last_song_id;
             last_song_id = song.metadata.id;
             if changed {
+                if !send_string_to_socket("lyrics".to_string(), "".to_string(), tx.clone().unwrap().clone()) {
+                    // Nothing
+                }
                 let read = store2.lock().unwrap().get_lyrics_by_song_id(song_id);
                 if let Ok((lyrics, _synced)) = read {
                     log::info!("Lyrics found in the database");
@@ -110,10 +113,12 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
                             },
                             Err(err) => {
                                 log::error!("{:?}", err);
+                                shared_state.lock().unwrap().last_lyrics = None;
                             }
                         }
                     } else {
                         log::warn!("No artists");
+                        shared_state.lock().unwrap().last_lyrics = None;
                     }
                 }
             }

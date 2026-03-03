@@ -1,4 +1,4 @@
-import { useLyrics } from "../providers/LyricsProvider";
+// import { useLyrics } from "../providers/LyricsProvider";
 import { LyricsRow, SongPlaying } from "../types";
 import { parseLyricsString, timeToHuman } from "../utils";
 import classes from "./Lyrics.module.scss";
@@ -52,6 +52,8 @@ export function Lyrics({ playing, raw }: { playing: SongPlaying, raw: String|nul
         if (raw) {
             const lines = parseLyricsString(raw)
             setDaemonLyrics(lines)
+        } else {
+            setDaemonLyrics([])
         }
     }, [raw]);
 
