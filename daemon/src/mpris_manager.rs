@@ -147,7 +147,7 @@ impl MprisManager {
 
             let [ track_key, url ] = strip_last_chunk_from_string(&full_track_key).try_into().expect("exactly 2 fields expected");
 
-            if url.contains("youtube") || url.contains("reddit") || url.contains(".mov") || url.contains(".mkv") || url.contains(".mp4") {
+            if url.contains("youtube") || url.contains("reddit") || url.contains(".mov") || url.contains(".mkv") || url.contains(".mp4") || track_key.contains("Advertisement") {
                 continue;
             }
 
