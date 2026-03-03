@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex, mpsc};
 use std::sync::mpsc::{Sender,Receiver};
+use log::logger;
 use shared::database::StatsStore;
 use shared::SongPlaying;
 use shared::SharedStore;
@@ -34,6 +35,12 @@ fn main() {
     setup_logging(true, "/tmp/muninn_daemon.log").expect("Can't initialize logger!");
     log::info!("Starting");
 
+    ctrlc::set_handler(move || {
+        log::warn!("SIGTERM received!");
+        logger().flush();
+        std::process::exit(0);
+    }).expect("Can't set ctrlc handler");
+
     let db_path = expand_tilde(Path::new("~/.local/share/com.vncnz.muninn/stats.sqlite"));
     let store: SharedStore = Arc::new(Mutex::new(StatsStore::new(&db_path).expect("Impossible to create database")));
     let store2 = store.clone();
@@ -49,6 +56,7 @@ fn main() {
 
     daemon_loop(rx_playing, store2, tx, shared_state);
     log::info!("Exiting");
+    logger().flush();
 }
 
 struct SharedState {
