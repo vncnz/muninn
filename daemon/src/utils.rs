@@ -49,7 +49,6 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use reqwest::blocking::Client;
 
-// 1. Rappresentazione del JSON restituito dalle API
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LrcResponse {
@@ -63,7 +62,7 @@ pub struct LrcResponse {
     pub plain_lyrics: Option<String>,
 }
 
-// 2. Helper per impacchettare i parametri di ricerca
+#[derive(Debug)]
 pub struct LrcQuery<'a> {
     pub artist: &'a str,
     pub title: &'a str,
@@ -92,7 +91,7 @@ pub fn fetch_synced_lyrics(query: LrcQuery) -> Result<String> {
 
     // Gestione degli stati HTTP non 200 (es. 404 se non trova nulla)
     if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Err(anyhow::anyhow!("Testo non trovato per questo brano"));
+        return Err(anyhow::anyhow!("Lyrics not found for {:?}", query));
     }
 
     let data: LrcResponse = response

@@ -55,7 +55,7 @@ struct SharedState {
 fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>>, tx: Option<Sender<String>>, shared_state: Arc<Mutex<SharedState>>) {
     let mut last_song_id: Option<i32> = None;
     
-    // let mut last_lyrics = Lyrics::new();
+    // let mut lyrics_engine = Lyrics::new();
     while let Ok(song) = rx_playing.recv() {
         if let Some(song_id) = song.metadata.id {
             let song_clone = song.clone();
