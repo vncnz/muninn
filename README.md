@@ -39,18 +39,17 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
     - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
     - ~~Give to the daemon the responsability for lyrics downloading and sending~~
     - ~~Send lyrics to gui on connection too~~
-- Flush current song when closing app
-- Wait 30s before lyrics downloading at the first time
-- Wait 60s before lyrics writing on db at the first time
-- Fix song length even after the first event of a song playing
-- Make filters resistent to stats type change
-- Add history graph for artists
-- Exclude plays without an artist
-- Add search feature (by title, by artist, etc.)
-- Collapse songs belonging to multiple albums when reading statistics from the database?
-- Add comparisons between different time ranges stats (current vs previous)? (partially replaced by history charts?)
-- Add the ability to reset a song counter or ignore a song/artist
-- Add the ability to merge one song listening time into another
+- DAEMON: Flush current song when closing daemon?
+- DAEMON: Wait 30s before lyrics downloading at the first time
+- DAEMON: Wait 60s before lyrics writing on db at the first time
+- DAEMON: Fix song length even after the first event of a song playing
+- GUI: Make filters resistent to stats type change
+- DAEMON: Exclude plays without an artist
+- GUI: Add search feature (by title, by artist, etc.)
+- GUI: Collapse songs belonging to multiple albums when reading statistics from the database?
+- GUI: Add comparisons between different time ranges stats (current vs previous)? (partially replaced by history charts!)
+- GUI: Add the ability to reset a song counter or ignore a song/artist
+- GUI: Add the ability to merge one song listening time into another
 
 ## Recommended IDE Setup
 
