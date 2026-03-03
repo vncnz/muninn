@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use crate::database::StatsStore;
 
 pub mod database;
-pub mod mpris_manager;
 
 #[derive(Serialize, Clone, Default)]
 pub struct SongInfo {

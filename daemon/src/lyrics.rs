@@ -102,7 +102,6 @@ impl Lyrics {
         // Accedere direttamente alla chiave
         // if let Some(synced) = v.get("syncedLyrics") {
         log::info!("syncedLyrics found");
-        // println!("Synced lyrics:\n{}", synced);
         for line in lyrics.lines() {
             if let Some(caps) = re.captures(line) {
                 let minutes: i64 = caps[1].parse().unwrap_or(0);

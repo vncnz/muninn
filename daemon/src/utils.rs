@@ -28,7 +28,6 @@ pub fn setup_logging(quiet: bool, log_path: &str) -> anyhow::Result<()> {
     
     config = config.chain(Box::new(buffered_writer) as Box<dyn std::io::Write + Send>);
 
-    // 2. Destinazione STDOUT (Condizionale)
     if !quiet {
         config = config.chain(std::io::stdout());
     }

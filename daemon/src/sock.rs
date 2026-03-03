@@ -33,7 +33,6 @@ pub fn start_socket_dispatcher(
                     log::info!("{} New client connected", chrono::Local::now().format("%H:%M:%S%.3f"));
                     stream.set_nonblocking(true).ok();
                     clients_accept.lock().unwrap().push(stream);
-                    // println!("About to lock s and send burst");
                     if let Ok(data) = shared_state.lock().unwrap().last_lyrics.clone().ok_or_else(|| "No lyrics".to_string()) {
                         log::info!("Sending burst with last lyrics");
                         thread::sleep(Duration::from_millis(2000));
@@ -57,11 +56,8 @@ pub fn start_socket_dispatcher(
     let clients_send = Arc::clone(&clients);
     thread::spawn(move || {
         for msg in rx {
-            // eprintln!("msg in rx {:?}", msg);
             let mut lock = clients_send.lock().unwrap();
-            // eprintln!("rx len {}, sending msg {:?}", lock.len(), msg);
             lock.retain_mut(|c| {
-                // eprintln!("lock.retain_mut");
                 if let Err(e) = c.write_all(format!("{}\n", msg).as_bytes()) {
                     log::info!("Disconnected client ({e})");
                     return false;

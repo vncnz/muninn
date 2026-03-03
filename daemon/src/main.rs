@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex, mpsc};
-use shared::mpris_manager::MprisManager;
 use std::sync::mpsc::{Sender,Receiver};
 use shared::database::StatsStore;
 use shared::SongPlaying;
@@ -18,6 +17,9 @@ use crate::utils::setup_logging;
 mod utils;
 mod lyrics;
 
+mod mpris_manager;
+use crate::mpris_manager::MprisManager;
+
 fn expand_tilde(path: &Path) -> PathBuf {
     let s = path.to_str().unwrap_or("");
     if s.starts_with('~') {
@@ -29,7 +31,7 @@ fn expand_tilde(path: &Path) -> PathBuf {
 }
 
 fn main() {
-    setup_logging(false, "/tmp/muninn_daemon.log").expect("Can't initialize logger!");
+    setup_logging(true, "/tmp/muninn_daemon.log").expect("Can't initialize logger!");
     log::info!("Starting");
 
     let db_path = expand_tilde(Path::new("~/.local/share/com.vncnz.muninn/stats.sqlite"));
@@ -73,7 +75,7 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
                         break;
                     }
                 } else {
-                    println!("No lyrics in the database");
+                    log::info!("No lyrics in the database");
 
                     if let Some(arts) = song.metadata.artists {
                         let raw_artist = arts.iter().map(|s| s.name.clone()).collect::<Vec<String>>().join(",");
@@ -84,8 +86,6 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
                             album: &song.metadata.album,
                             duration: song.metadata.length as u32
                         });
-
-                        // eprintln!("{:?}", resp);
 
                         match resp {
                             Ok(lyrics) => {

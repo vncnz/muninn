@@ -3,8 +3,9 @@ use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::Duration;
 
-use crate::{SharedStore, Song, SongPlaying};
-use crate::database::StatsStore;
+use crate::{SharedStore, SongPlaying};
+use shared::database::StatsStore;
+use shared::Song;
 
 // const MAX_VALID_LENGTH_SECS: f64 = 86400.0;
 // const MIN_TIME_TO_SAVE_SECS: f64 = 10.0;
@@ -30,8 +31,6 @@ fn strip_last_chunk_from_string(s: &str) -> (String, String) {
             .split('\x1F')
             .map(|s| s.to_string())
             .collect();
-
-        // println!("{:?}", &values);
 
         if values.len() == 4 {
             let [title, artist, album, length] =
@@ -64,7 +63,7 @@ pub struct MprisManager {
 
 /* impl Drop for MprisManager {
     fn drop(&mut self) {
-        eprintln!("DROP!");
+        log::info!("DROP!");
     }
 } */
 
@@ -130,7 +129,7 @@ impl MprisManager {
             let Some(active_player) = active else {
                 if cumulative_time > 0.0 {
                     let mut store = self.shared_store.lock().expect("StatsStore poisoned");
-                    eprintln!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().hash, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
+                    log::info!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().hash, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
                     store.increase_time(current.as_ref().unwrap().id.unwrap(), cumulative_time).expect("Impossible to update time");
                     cumulative_time = 0.0;
                 }
@@ -149,34 +148,33 @@ impl MprisManager {
             let [ track_key, url ] = strip_last_chunk_from_string(&full_track_key).try_into().expect("exactly 2 fields expected");
 
             if url.contains("youtube") || url.contains("reddit") || url.contains(".mov") || url.contains(".mkv") || url.contains(".mp4") {
-                // println!("Skipping YouTube track");
                 continue;
             }
 
             let position = parse_position(pc_position(&active_player));
 
             let [ track_hash, length ] = strip_last_chunk_from_string(&track_key).try_into().expect("exactly 2 fields expected");
-            // println!("Track hash: {}, length: {}", track_hash, length);
+            // log::info!("Track hash: {}, length: {}", track_hash, length);
 
             if current.is_none() || current.as_ref().unwrap().hash != track_hash {
                 if current.is_some() {
                     let mut store = self.shared_store.lock().expect("StatsStore poisoned");
-                    eprintln!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().hash, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
+                    log::info!("Flushing track {} ({}) with time {}", current.as_ref().unwrap().hash, current.as_ref().unwrap().id.unwrap_or_else(|| 0), cumulative_time);
                     store.increase_time(current.as_ref().unwrap().id.unwrap(), cumulative_time).expect("Impossible to update time");
                 }
                 let on_database: Option<Song> = {
                     let store = self.shared_store.lock().expect("StatsStore poisoned");
-                    // println!("Looking for track hash {:?} ({}) in database", track_hash, track_hash.len());
+                    // log::info!("Looking for track hash {:?} ({}) in database", track_hash, track_hash.len());
                     if let Ok(opt_song) = store.get_song_by_hash(&track_hash) {
                         if let Some(song) = opt_song {
-                            println!("Found track {} in database", song.id.unwrap());
+                            log::info!("Found track {} in database", song.id.unwrap());
                             Some(song)
                         } else {
-                            println!("Track {} not found in database", track_hash);
+                            log::info!("Track {} not found in database", track_hash);
                             None
                         }
                     } else {
-                        println!("Track {} not found in database -- QUERY ERROR", track_hash);
+                        log::error!("Track {} not found in database -- QUERY ERROR", track_hash);
                         None
                     }
                 };
@@ -187,10 +185,10 @@ impl MprisManager {
                     current = Song::new(track_key.clone());
                     if current.is_some() {
                         let mut store = self.shared_store.lock().expect("StatsStore poisoned");
-                        println!("Inserting new track {:?} ({}) into database", current.as_ref().unwrap().hash, current.as_ref().unwrap().hash.len());
+                        log::info!("Inserting new track {:?} ({}) into database", current.as_ref().unwrap().hash, current.as_ref().unwrap().hash.len());
                         current = Some(store.insert_song(current.as_ref().unwrap()).expect("Impossible to insert song"));
                     } else {
-                        println!("Impossible to parse track key: {}", track_key);
+                        log::warn!("Impossible to parse track key: {}", track_key);
                     }
                 }
                 cumulative_time = 0.0;
@@ -208,7 +206,7 @@ impl MprisManager {
                         let mut c = current.clone().unwrap();
                         let mut store = self.shared_store.lock().expect("StatsStore poisoned");
                         if store.fix_song_length(c.id.unwrap(), len_secs).is_ok() {
-                            println!("Fixed length {len_secs} for song {:?}", c.id);
+                            log::info!("Fixed length {len_secs} for song {:?}", c.id);
                             c.length = len_secs;
                             current = Some(c);
                         }
