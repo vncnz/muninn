@@ -30,17 +30,17 @@ pub fn start_socket_dispatcher(
         loop {
             match listener.accept() {
                 Ok((stream, _)) => {
-                    println!("{} New client connected", chrono::Local::now().format("%H:%M:%S%.3f"));
+                    log::info!("{} New client connected", chrono::Local::now().format("%H:%M:%S%.3f"));
                     stream.set_nonblocking(true).ok();
                     clients_accept.lock().unwrap().push(stream);
                     // println!("About to lock s and send burst");
                     if let Ok(data) = shared_state.lock().unwrap().last_lyrics.clone().ok_or_else(|| "No lyrics".to_string()) {
-                        eprintln!("Sending burst with last lyrics");
+                        log::info!("Sending burst with last lyrics");
                         thread::sleep(Duration::from_millis(2000));
                         // send(serde_json::Value::String(data), tx_clone.clone());
                         // tx_clone.send("burst".into()).ok();
                         if !send_string_to_socket("lyrics".to_string(), data, tx_clone.clone()) {
-                            eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                            log::info!("Dispatcher terminato, chiudo thread e muoio");
                             break;
                         }
                     }
@@ -48,7 +48,7 @@ pub fn start_socket_dispatcher(
                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                     thread::sleep(std::time::Duration::from_millis(100));
                 }
-                Err(e) => eprintln!("Accept error: {e}"),
+                Err(e) => log::error!("Accept error: {e}"),
             }
         }
     });
@@ -63,7 +63,7 @@ pub fn start_socket_dispatcher(
             lock.retain_mut(|c| {
                 // eprintln!("lock.retain_mut");
                 if let Err(e) = c.write_all(format!("{}\n", msg).as_bytes()) {
-                    eprintln!("Disconnected client ({e})");
+                    log::info!("Disconnected client ({e})");
                     return false;
                 }
                 true
@@ -102,11 +102,11 @@ pub fn send_string_to_socket (resource: String, lyrics: String, tx: Sender<Strin
         };
         if let Ok(msg) = serde_json::to_value(msg_obj) {
             if !send(msg, tx) {
-                eprintln!("Dispatcher terminato, chiudo thread e muoio");
+                log::info!("Dispatcher terminato, chiudo thread e muoio");
                 return false;
             }
         } else {
-            eprintln!("Can't serialize msg_obj for {resource}")
+            log::warn!("Can't serialize msg_obj for {resource}")
         }
     }
     return true;

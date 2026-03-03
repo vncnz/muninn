@@ -62,7 +62,7 @@ impl Lyrics {
 
     /* fn style_text(&mut self, position_secs: f64) -> Option<(Vec<ratatui::text::Line<'static>>, usize)> {
         let current_index = self.current_lyric_index(position_secs);
-        log_to_file(format!("{current_index} {}", self.rendered_index));
+        log::info!(format!("{current_index} {}", self.rendered_index));
         if current_index != self.rendered_index {
             let lines: Vec<Line> = self.lines.iter().enumerate().map(|(i, line)| {
                 let style = if i == current_index {
@@ -101,7 +101,7 @@ impl Lyrics {
 
         // Accedere direttamente alla chiave
         // if let Some(synced) = v.get("syncedLyrics") {
-        log_to_file("syncedLyrics found".into());
+        log::info!("syncedLyrics found");
         // println!("Synced lyrics:\n{}", synced);
         for line in lyrics.lines() {
             if let Some(caps) = re.captures(line) {
@@ -114,13 +114,9 @@ impl Lyrics {
                 });
             }
         }
-        /* } else {
-            log_to_file("syncedLyrics NOT found".into());
-            log_to_file(format!("{v}"));
-        } */
 
         if lines.len() == 0 {
-            log_to_file("No lines produced".into());
+            log::info!("No lines produced");
             false
         } else {
             self.lines = lines;

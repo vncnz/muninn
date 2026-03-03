@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex, mpsc};
-use shared::SocketEventMsg;
 use shared::mpris_manager::MprisManager;
 use std::sync::mpsc::{Sender,Receiver};
 use shared::database::StatsStore;
@@ -14,6 +13,7 @@ use crate::sock::send_string_to_socket;
 use crate::sock::start_socket_dispatcher;
 use crate::utils::LrcQuery;
 use crate::utils::fetch_synced_lyrics;
+use crate::utils::setup_logging;
 
 mod utils;
 mod lyrics;
@@ -29,7 +29,8 @@ fn expand_tilde(path: &Path) -> PathBuf {
 }
 
 fn main() {
-    println!("Starting");
+    setup_logging(false, "/tmp/muninn_daemon.log").expect("Can't initialize logger!");
+    log::info!("Starting");
 
     let db_path = expand_tilde(Path::new("~/.local/share/com.vncnz.muninn/stats.sqlite"));
     let store: SharedStore = Arc::new(Mutex::new(StatsStore::new(&db_path).expect("Impossible to create database")));
@@ -45,7 +46,7 @@ fn main() {
     });
 
     daemon_loop(rx_playing, store2, tx, shared_state);
-    println!("Exiting");
+    log::info!("Exiting");
 }
 
 struct SharedState {
@@ -66,7 +67,7 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
             if changed {
                 let read = store2.lock().unwrap().get_lyrics_by_song_id(song_id);
                 if let Ok((lyrics, _synced)) = read {
-                    println!("Lyrics found in the database");
+                    log::info!("Lyrics found in the database");
                     shared_state.lock().unwrap().last_lyrics = Some(lyrics.clone());
                     if !send_string_to_socket("lyrics".to_string(), lyrics, tx.clone().unwrap().clone()) {
                         break;
@@ -88,11 +89,11 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
 
                         match resp {
                             Ok(lyrics) => {
-                                eprintln!("About to insert");
+                                log::info!("About to insert");
                                 if let Err(err) = store2.lock().unwrap().insert_lyrics(song_id, lyrics.clone(), true) {
-                                    eprintln!("Error inserting lyrics in the database {err}");
+                                    log::info!("Error inserting lyrics in the database {err}");
                                 } else {
-                                    eprintln!("Lyrics inserted in the database");
+                                    log::info!("Lyrics inserted in the database");
                                 }
                                 shared_state.lock().unwrap().last_lyrics = Some(lyrics.clone());
                                 if !send_string_to_socket("lyrics".to_string(), lyrics, tx.clone().unwrap().clone()) {
@@ -100,11 +101,11 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
                                 }
                             },
                             Err(err) => {
-                                eprintln!("{:?}", err);
+                                log::error!("{:?}", err);
                             }
                         }
                     } else {
-                        eprintln!("No artists");
+                        log::warn!("No artists");
                     }
                 }
             }
@@ -113,11 +114,11 @@ fn daemon_loop (rx_playing: Receiver<SongPlaying>, store2: Arc<Mutex<StatsStore>
             let json_val_result = serde_json::to_value(song_clone);
             if let Ok(json_val) = json_val_result {
                 if !send_string_to_socket("playing".to_string(), json_val.to_string(), tx.clone().unwrap().clone()) {
-                    eprintln!("Dispatcher terminated, exiting...");
+                    log::info!("Dispatcher terminated, exiting...");
                     break;
                 }
             } else {
-                eprintln!("Error converting song:PlayingData to json");
+                log::warn!("Error converting song:PlayingData to json");
             }
         }
     }

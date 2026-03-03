@@ -1,14 +1,42 @@
 use std::fs::OpenOptions;
-use std::io::Write;
+use anyhow::{Context, Result};
+use serde::Deserialize;
+use reqwest::blocking::Client;
 
-pub fn log_to_file(msg: String) {
-    let mut file = OpenOptions::new()
+pub fn setup_logging(quiet: bool, log_path: &str) -> anyhow::Result<()> {
+    let mut config = fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}] {}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                // record.target(),
+                record.level(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Info);
+
+    // 1. Destinazione FILE (Sempre attiva)
+    let log_file = OpenOptions::new()
+        .write(true)
         .create(true)
-        .append(true)
-        .open("/tmp/galdrar.log")
-        .expect("impossibile aprire log file");
-    writeln!(file, "[{}] {}", chrono::Local::now().format("%H:%M:%S%.3f"), msg).unwrap();
+        // .append(true) // if persistent
+        .truncate(true) // new at each start
+        .open(log_path)
+        .context("Impossible to open log file in /tmp")?;
+    let buffered_writer = std::io::BufWriter::new(log_file);
+    
+    config = config.chain(Box::new(buffered_writer) as Box<dyn std::io::Write + Send>);
+
+    // 2. Destinazione STDOUT (Condizionale)
+    if !quiet {
+        config = config.chain(std::io::stdout());
+    }
+
+    config.apply().context("Logger can't be initialized")?;
+    Ok(())
 }
+
 /*
 pub fn to_human (secs: i64) -> String {
     format!("{:02}:{:02}", secs / 60, secs % 60)
@@ -21,33 +49,16 @@ pub fn get_song_blocking(title: &str, art: &str, alb: &str, dur: f64) -> Result<
         "https://lrclib.net/api/get?artist_name={art}&track_name={title}&album_name={alb}&duration={dur}"
     );
 
-    log_to_file("Fetching song lyrics".into());
+    log::info!("Fetching song lyrics".into());
     let client = bClient::new();
     let resp = client.get(&url).send()?.text();
-    log_to_file("Fetched song lyrics".into());
+    log::info!("Fetched song lyrics".into());
     resp
     // reqwest::blocking::get(url).text()?
 }
 */
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use anyhow::{Context, Result};
-use serde::Deserialize;
-use reqwest::blocking::Client;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
