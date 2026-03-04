@@ -24,6 +24,16 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 - tracks sorted by total listening time
 - artists sorted by total listening time
 
+## Architecture Overview
+
+The project has been re-engineered into a decoupled architecture to improve efficiency and allow for background data collection without a persistent graphical interface. It now consists of two main components:
+
+- muninn-daemon: a lightweight, headless background process written in pure Rust. It monitors music playback via MPRIS, handles data persistence (SQLite), and manages lyrics fetching/caching. It runs silently in the background. It logs to file (/tmp/muninn_daemon.log)
+- muninn-gui: a Tauri+React app that can be launched on demand. It connects to the daemon for playing and lyrics updates and provides listening statistics and charts.
+
+### Why this split?
+- resource efficiency: the daemon, always running, consumes approx. 3Mb of RAM and minimal CPU. The webkit-based GUI is active only when you want to interact with it
+- flexibility: the daemon acts as a single source of truth and can serve data to multiple clients (atm, the main GUI)
 
 ## TODO
 - ~~Better mpris and track switchin/saving management~~
@@ -54,3 +64,15 @@ All the song you're listening is tracked (locally, don't worry!). You can view:
 ## Recommended IDE Setup
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+
+## How to compile and run
+
+### Daemon
+In dev mode, you can exec `cargo run --bin muninn-daemon` from the project root or `cargo run` from the daemon folder.
+
+In production mode, you can exec `cargo build --bin muninn-daemon` from the project root or `cargo build` from the daemon folder.
+
+### GUI
+In dev mode, you can exec `pnpm tauri dev` from the gui folder.
+
+In production mode, you can exec `pnpm tauri build --no-bundle`.
