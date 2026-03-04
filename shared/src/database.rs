@@ -24,7 +24,7 @@ impl StatsStore {
         )?;
 
         if version < CURRENT_DB_VERSION {
-            println!("Upgrading database from version {} to {}", version, CURRENT_DB_VERSION);
+            log::warn!("Upgrading database from version {} to {}", version, CURRENT_DB_VERSION);
             // destructive reset (early stage)
             // StatsStore::reset_database(&conn)?;
             // StatsStore::recreate_database(&conn)?;
@@ -35,15 +35,15 @@ impl StatsStore {
              */
             if version < 7 {
                 StatsStore::recreate_database(&conn)?;
-                println!("Upgraded/created to v7");
+                log::warn!("Upgraded/created to v7");
             }
             if version < 9 {
                 StatsStore::apply9changes(&conn)?;
-                println!("Upgraded to v9");
+                log::warn!("Upgraded to v9");
             }
             if version < 10 {
                 StatsStore::apply10changes(&conn)?;
-                println!("Upgraded to v10");
+                log::warn!("Upgraded to v10");
             }
             conn.execute(
                 &format!("PRAGMA user_version = {};", CURRENT_DB_VERSION),
@@ -55,7 +55,7 @@ impl StatsStore {
                 reindex idx_song_artists_song;
                 reindex idx_song_artists_artist;
             ")?; */
-            println!("Database version {} is up to date", version);
+            log::warn!("Database version {} is up to date", version);
         }
 
         conn.execute_batch("
@@ -198,13 +198,10 @@ impl StatsStore {
 
         let mut rows = stmt.query(params![hash, id])?;
 
-        // println!("Querying song by hash: {:?}, {} results", hash, rows.size_hint().0);
-
         let mut song: Option<Song> = None;
         let mut artists: Vec<Artist> = Vec::new();
 
         while let Some(row) = rows.next()? {
-            // println!("Processing row for song id: {:?}", row.get::<_, Option<i32>>(0)?);
             if song.is_none() {
                 song = Some(Song {
                     id: Some(row.get(0)?),
@@ -232,10 +229,8 @@ impl StatsStore {
             if !artists.is_empty() {
                 s.artists = Some(artists);
             }
-            // println!("gsbh - Found song for hash: {:?}", hash);
             Ok(Some(s))
         } else {
-            // println!("gsbh - No song found for hash: {:?}", hash);
             Ok(None)
         }
     }
@@ -353,7 +348,7 @@ impl StatsStore {
             "#,
             params![ length, songid ],
         )?;
-        println!("Updating length {length} for song {songid}");
+        log::info!("Updating length {length} for song {songid}");
         tx.commit()?;
         Ok(())
     }
