@@ -61,6 +61,7 @@ impl StatsStore {
         conn.execute_batch("
             PRAGMA journal_mode = WAL;
             PRAGMA synchronous = NORMAL;
+            PRAGMA wal_checkpoint(TRUNCATE);
         ")?;
 
         Ok(StatsStore { conn })
