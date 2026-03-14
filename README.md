@@ -49,6 +49,7 @@ The project has been re-engineered into a decoupled architecture to improve effi
     - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
     - ~~Give to the daemon the responsability for lyrics downloading and sending~~
     - ~~Send lyrics to gui on connection too~~
+- Don't send last lyrics if not playing
 - Ignore whatsapp, telegram and every streaming without artist
 - DAEMON: Flush current song when closing daemon?
 - DAEMON: Wait 30s before lyrics downloading at the first time
