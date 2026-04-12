@@ -148,7 +148,12 @@ impl MprisManager {
 
             let [ track_key, url ] = strip_last_chunk_from_string(&full_track_key).try_into().expect("exactly 2 fields expected");
 
-            if url.contains("youtube") || url.contains("web.telegram.org") || url.contains("reddit") || url.contains(".mov") || url.contains(".mkv") || url.contains(".mp4") || track_key.contains("Advertisement") {
+            let blacklisted_patterns = ["web.telegram.org", "reddit", "tmp", ".mkv", ".mov", ".mp4"];
+            if blacklisted_patterns.iter().any(|&p| url.contains(p)) {
+                continue;
+            }
+
+            if track_key.contains("Advertisement") {
                 continue;
             }
 
