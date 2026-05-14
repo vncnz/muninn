@@ -2,7 +2,7 @@
 
 A Linux desktop companion that remembers what you listen to, with synced lyrics and MPRIS integration.
 
-Muninn (Old Norse for "memory" or "mind") is one of the two ravens, alongside Huginn ("thought" in English), that accompany the god Odin. They act as his messengers, flying across the world to gather information and returning to whisper news into his ears. 
+Muninn (Old Norse for "memory" or "mind") is one of the two ravens, alongside Huginn ("thought" in English), that accompany the god Odin. They act as his messengers, flying across the world to gather information and returning to whisper news into his ears.
 Muninn represents memory, while Huginn represents thought/mind. In the same spirit, Muninn-the-project collects MPRIS data, remembers what you listen to, and gives that information back to you.
 
 ## Disclaimer
@@ -13,14 +13,18 @@ The focus is on architecture, data flow, and maintainability rather than feature
 ## Features
 
 ### Current playing
+
 The app shows what you are listening to, regardless of the player or browser you are using (excluding YouTube videos).
 You can read song title, artist(s), album, song length, progress (as elapsed time, percentage and visual progress bar).
 
 ### Lyrics
+
 Muninn automatically loads the lyrics of the song you're listening to, using lrclib API. If a sync'ed lyrics are available, the app highlights each line based on the song progression. If not, it shows the lyrics without times.
 
 ### Stats
+
 All the song you're listening is tracked (locally, don't worry!). You can view:
+
 - tracks sorted by total listening time
 - artists sorted by total listening time
 
@@ -32,10 +36,12 @@ The project has been re-engineered into a decoupled architecture to improve effi
 - muninn-gui: a Tauri+React app that can be launched on demand. It connects to the daemon for playing and lyrics updates and provides listening statistics and charts.
 
 ### Why this split?
+
 - resource efficiency: the daemon, always running, consumes approx. 3Mb of RAM and minimal CPU. The webkit-based GUI is active only when you want to interact with it
 - flexibility: the daemon acts as a single source of truth and can serve data to multiple clients (atm, the main GUI)
 
 ## TODO
+
 - ~~Better mpris and track switchin/saving management~~
 - ~~Add lyrics loading capability~~
 - ~~Change stats UI, compressing data in a narrow column~~
@@ -46,9 +52,9 @@ The project has been re-engineered into a decoupled architecture to improve effi
 - ~~Limit number of results shown in stats (top 10, top 25, top 50, something like that)~~
 - ~~New layout~~
 - RE-ENGINEERING: split the project into two parts: a daemon and a client/UI - Doing!
-    - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
-    - ~~Give to the daemon the responsability for lyrics downloading and sending~~
-    - ~~Send lyrics to gui on connection too~~
+  - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
+  - ~~Give to the daemon the responsability for lyrics downloading and sending~~
+  - ~~Send lyrics to gui on connection too~~
 - Don't send last lyrics if not playing
 - Ignore whatsapp, telegram and every streaming without artist
 - DAEMON: Flush current song when closing daemon?
@@ -63,6 +69,12 @@ The project has been re-engineered into a decoupled architecture to improve effi
 - GUI: Add the ability to reset a song counter or ignore a song/artist
 - GUI: Add the ability to merge one song listening time into another
 
+## Known bugs
+
+- Error in stats loading for songs/artists plot if database is empty:
+thread 'main' (125738) panicked at gui/src-tauri/src/lib.rs:21:31:
+Failed to get first date: InvalidColumnType(0, "min(day)", Null)
+
 ## Recommended IDE Setup
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
@@ -70,11 +82,13 @@ The project has been re-engineered into a decoupled architecture to improve effi
 ## How to compile and run
 
 ### Daemon
+
 In dev mode, you can exec `cargo run --bin muninn-daemon` from the project root or `cargo run` from the daemon folder.
 
 In production mode, you can exec `cargo build --bin muninn-daemon` from the project root or `cargo build` from the daemon folder.
 
 ### GUI
+
 In dev mode, you can exec `pnpm tauri dev` from the gui folder.
 
 In production mode, you can exec `pnpm tauri build --no-bundle`.
