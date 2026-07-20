@@ -2,7 +2,8 @@
 import { LyricsRow, SongPlaying } from "../types";
 import { parseLyricsString, timeToHuman } from "../utils";
 import classes from "./Lyrics.module.scss";
-import { useState, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 export function Lyrics({ playing, raw }: { playing: SongPlaying, raw: String|null }) {
     // const [lyricsData, setLyricsData] = useState(null as LyricsResponse | null)
@@ -79,6 +80,7 @@ export function Lyrics({ playing, raw }: { playing: SongPlaying, raw: String|nul
         }
     }, [playing, lyrics])
 
+    const setPosition = useCallback( (secs: number) => invoke("set_position", { secs }), [] )
     
 
     let lyricsEls = null
@@ -93,7 +95,7 @@ export function Lyrics({ playing, raw }: { playing: SongPlaying, raw: String|nul
             return acc
         }, 0)
         lyricsEls = lyrics.map((line, idx) => {
-            return <div key={idx} className={classes.lyricsLine + ' ' + (line.time <= playing.position ? classes.lyricsLineOld : '') + ' ' + (idx === lastActive ? classes.lyricsLineActive : '') + ` line-${idx}`}>
+            return <div key={idx} className={classes.lyricsLine + ' ' + (line.time <= playing.position ? classes.lyricsLineOld : '') + ' ' + (idx === lastActive ? classes.lyricsLineActive : '') + ` line-${idx}`} onClick={() => { setPosition(line.time) }}>
                 [{timeToHuman(line.time)}] {line.text}
             </div>
         })

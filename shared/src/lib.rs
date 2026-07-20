@@ -63,6 +63,22 @@ pub struct ArtistHistoryStats {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
+pub enum SongState {
+    OnDatabase,
+    ToBeSaved,
+    Volatile
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub enum SongType {
+    Song,
+    Youtube,
+    Movie,
+    Other,
+    Unknown
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Song {
     pub id: Option<i32>,
     pub hash: String,
@@ -70,7 +86,8 @@ pub struct Song {
     pub album: String,
     pub length: i32,
     pub artists: Option<Vec<Artist>>,
-    pub listened_time: f64
+    pub listened_time: f64,
+    // pub songtype: SongType // TODO: use this field in the constructor and for logic
 }
 
 impl Song {
@@ -93,14 +110,22 @@ impl Song {
                 .map(|name| Artist { id: None, name: name.to_string() })
                 .collect::<Vec<Artist>>();
 
+            /* let songtype = if url.contains("youtube") { SongType::Youtube }
+                else if url.contains(".mov") || url.contains(".mkv") || url.contains(".mp4") { SongType::Movie }
+                else if url.contains("reddit") || track_key.contains("Advertisement") { SongType::Other }
+                else if artist.len() > 0 { SongType::Song } else { SongType::Unknown }; */
+            let songtype = SongType::Unknown; // TODO
+
+
             return Some(Song {
                 id: None,
                 hash: format!("{}\x1F{}\x1F{}", title, artist, album),
                 title,
-                artists: Some(artists),
+                artists: if artist.len() > 0 { Some(artists) } else { None },
                 album,
                 length: len_secs as i32,
                 listened_time: 0.0
+                // songtype
             })
         }
         None
