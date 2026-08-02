@@ -51,12 +51,14 @@ The project has been re-engineered into a decoupled architecture to improve effi
 - ~~Add filter feature (by title, by artist, etc.)~~
 - ~~Limit number of results shown in stats (top 10, top 25, top 50, something like that)~~
 - ~~New layout~~
-- RE-ENGINEERING: split the project into two parts: a daemon and a client/UI - Doing!
+- ~~RE-ENGINEERING: split the project into two parts: a daemon and a client/UI - Done!~~
   - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
   - ~~Give to the daemon the responsability for lyrics downloading and sending~~
   - ~~Send lyrics to gui on connection too~~
-- Don't send last lyrics if not playing
-- Ignore whatsapp, telegram and every streaming without artist
+- SQL: In graph view with multi-day buckets, cumulate data on the end of each one and not on the start
+- Separated lyrics for different-length versions of the same song?
+- DAEMON: Don't send last lyrics if not playing
+- DAEMON: Ignore whatsapp, telegram and every streaming without artist
 - DAEMON: Flush current song when closing daemon?
 - DAEMON: Wait 30s before lyrics downloading at the first time
 - DAEMON: Wait 60s before lyrics writing on db at the first time
