@@ -55,6 +55,8 @@ The project has been re-engineered into a decoupled architecture to improve effi
   - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
   - ~~Give to the daemon the responsability for lyrics downloading and sending~~
   - ~~Send lyrics to gui on connection too~~
+- GUI: set better defaults for graphics: a longer timespan and a 7-days bucket size?
+- GUI: add click event to entire timespan element, on click set the closest bound
 - SQL: In graph view with multi-day buckets, cumulate data on the end of each one and not on the start
 - Separated lyrics for different-length versions of the same song?
 - DAEMON: Don't send last lyrics if not playing
