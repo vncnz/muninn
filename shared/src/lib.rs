@@ -62,6 +62,23 @@ pub struct ArtistHistoryStats {
     pub listened_time: f64
 }
 
+#[derive(Serialize, Clone, Debug)]
+pub struct BucketPoint {
+    pub index: i32,
+    pub date: String,
+    pub cumulative_time: f64,
+    pub point_time: f64
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct ArtistHistoryBuckets {
+    // pub date: String,
+    pub id: i32,
+    pub name: String,
+    // pub listened_time: f64
+    pub points: Vec<BucketPoint>
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum SongState {
     OnDatabase,

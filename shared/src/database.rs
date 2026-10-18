@@ -3,7 +3,7 @@ use std::path::Path;
 use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
 
-use crate::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, Song, SongHistoryStats};
+use crate::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, BucketPoint, Song, SongHistoryStats};
 
 use chrono;
 
@@ -821,6 +821,85 @@ ORDER BY bucket ASC, total_time DESC;
         if let Ok(artists) = artists {
             for artist in artists {
                 if let Ok(s) = artist {
+                    results.push(s);
+                }
+            }
+        }
+        results
+    }
+
+    pub fn get_artist_buckets(&self, artist: i32, _from: i32, total_buckets: i32, bucket_size: i32) -> Vec<BucketPoint> {
+        
+        let mut results = Vec::new();
+        let mut stmt = self.conn.prepare(&format!(r"
+WITH RECURSIVE
+params AS (
+    SELECT 
+        (SELECT MAX(day) FROM listening_days) AS ref_date -- Data di riferimento (default: l'ultimo giorno registrato nel DB)
+),
+-- Generate buckets from 0 to total_buckets - 1
+buckets(bucket_index) AS (
+    SELECT 0
+    UNION ALL
+    SELECT bucket_index + 1 FROM buckets, params 
+    WHERE bucket_index < {total_buckets} - 1
+),
+-- Upper bound for each bucket
+bucket_bounds AS (
+    SELECT 
+        b.bucket_index,
+        date(p.ref_date, '-' || (b.bucket_index * {bucket_size}) || ' days') AS bucket_end_date
+    FROM buckets b
+    CROSS JOIN params p
+),
+-- Filter by artist
+artist_songs AS (
+    SELECT DISTINCT sa.song_id
+    FROM song_artists sa
+    WHERE sa.artist_id = {artist}
+),
+-- For each (bucket, song), find last record <= bucket_end_date
+latest_song_records AS (
+    SELECT 
+        bb.bucket_index,
+        asng.song_id,
+        MAX(ld.day) AS max_day
+    FROM bucket_bounds bb
+    CROSS JOIN artist_songs asng
+    JOIN listening_days ld ON ld.song_id = asng.song_id AND ld.day <= bb.bucket_end_date
+    GROUP BY bb.bucket_index, asng.song_id
+),
+-- Recover the cumulative_seconds
+bucket_song_values AS (
+    SELECT 
+        lsr.bucket_index,
+        lsr.song_id,
+        ld.cumulative_seconds
+    FROM latest_song_records lsr
+    JOIN listening_days ld ON ld.song_id = lsr.song_id AND ld.day = lsr.max_day
+)
+-- Sum all cumulative_seconds per bucket to get the total listened time for the artist in that bucket
+SELECT 
+    bb.bucket_index,
+    bb.bucket_end_date,
+    COALESCE(SUM(bsv.cumulative_seconds), 0) AS total_cumulative_seconds
+FROM bucket_bounds bb
+LEFT JOIN bucket_song_values bsv ON bb.bucket_index = bsv.bucket_index
+GROUP BY bb.bucket_index, bb.bucket_end_date
+ORDER BY bb.bucket_index ASC;
+        ")).expect("prepare ko");
+        let points = stmt.query_map([], |row| {
+            Ok(BucketPoint { 
+                index: 0,
+                date: row.get(1).expect("Date in query"),
+                cumulative_time: row.get(2).expect("listened_time in query"),
+                point_time: 0.0
+            })
+        });
+
+        if let Ok(points) = points {
+            for point in points {
+                if let Ok(s) = point {
                     results.push(s);
                 }
             }

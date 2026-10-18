@@ -9,7 +9,7 @@ export function StatsArtistRow({ artist, max, idd }: { artist: ArtistStat, max: 
         <div className={classes.artiststatrow + ' id-' + idd}>
             <div className={classes.time}>
                 <div className={classes.progressBar}>
-                    <div style={{ height: `${((artist.listened_time  as number)/ max)*100}%` }}></div>
+                    <div style={{ height: `${((artist.listened_time as number)/ max)*100}%` }}></div>
                 </div>
                 <div className={classes.listened}>{timeConversion(artist.listened_time)}</div>
             </div>

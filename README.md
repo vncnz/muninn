@@ -56,6 +56,8 @@ The project has been re-engineered into a decoupled architecture to improve effi
   - ~~Give to the daemon the responsability for lyrics downloading and sending~~
   - ~~Send lyrics to gui on connection too~~
 - GUI: set better defaults for graphics: a longer timespan and a 7-days bucket size?
+- GUI: New heatmap visualization
+- GUI: Add to heatmap visualization three sort logics: total, peak, recent
 - GUI: add click event to entire timespan element, on click set the closest bound
 - DAEMON: Ignore "A site is playing media"
 - SQL: In graph view with multi-day buckets, cumulate data on the end of each one and not on the start

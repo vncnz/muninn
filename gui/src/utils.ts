@@ -46,6 +46,33 @@ export function timeConversion (secs: number) {
     }
 }
 
+export function timeConversionDetailed (secs: number) {
+
+    const minutes = (secs / 60).toFixed(0);
+    const hours = (secs / (60 * 60)).toFixed(0);
+    const days = (secs / (60 * 60 * 24)).toFixed(0);
+
+    if (secs < 60) {
+        return secs + "\xa0s";
+    } else if (parseFloat(minutes) < 60) {
+        return minutes + "\xa0m";
+    } else if (parseFloat(hours) < 24) {
+        return hours + "h" + (parseInt(minutes) % 60) + "m";
+    } else {
+        return days + "\xa0d" + hours + "\xa0h"
+    }
+}
+
+export function dateConversion (date: string, diff: number) {
+  let dt = new Date(date)
+  if (diff) { dt.setDate(dt.getDate() + diff) }
+  return dt.toLocaleDateString("en-US", {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
 export const palette25 = [
   "#4FC3F7", // light blue
   "#FF7043", // orange

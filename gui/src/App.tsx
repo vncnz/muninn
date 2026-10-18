@@ -11,6 +11,7 @@ import { StatsAlbumRow } from "./StatsAlbumRow/StatsAlbumRow";
 import { StatsSongRow } from "./StatsSongRow/StatsSongRow";
 import { SongsHistoryChart } from "./SongsHistoryChart/SongsHistoryChart";
 import { ArtistsHistoryChart } from "./ArtistsHistoryChart/ArtistsHistoryChart";
+import { ArtistsHistoryHeatmap } from "./ArtistsHistoryHeatmap/ArtistsHistoryHeatmap";
 import React from "react";
 import { LyricsProvider } from "./providers/LyricsProvider";
 
@@ -19,6 +20,9 @@ let SongsHistoryChartMemorized = React.memo(() => {
 })
 let ArtistsHistoryChartMemorized = React.memo(() => {
   return <ArtistsHistoryChart key='historyA' />
+})
+let ArtistsHistoryHeatmapMemorized = React.memo(() => {
+  return <ArtistsHistoryHeatmap key='historyAheatmap' />
 })
 
 function App() {
@@ -31,7 +35,7 @@ function App() {
   const [lyrics, setLyrics] = useState<String|null>(null)
   // const [showHistory, setShowHistory] = useState<null|'songs'|'artists'>('songs')
 
-  const [selectedTab, setSelectedTab] = useState<'lyrics'|'ranks'|'graphs1'|'graphs2'>('lyrics')
+  const [selectedTab, setSelectedTab] = useState<'lyrics'|'ranks'|'graphs1'|'graphs2'|'graphs3'>('lyrics')
 
   
   useEffect(() => {
@@ -67,6 +71,7 @@ function App() {
     if (selectedTab === 'lyrics') setSelectedTab('ranks')
     else if (selectedTab === 'ranks') setSelectedTab('graphs1')
     else if (selectedTab === 'graphs1') setSelectedTab('graphs2')
+    else if (selectedTab === 'graphs2') setSelectedTab('graphs3')
     else setSelectedTab('lyrics')
   }
   
@@ -154,6 +159,9 @@ function App() {
     buttonSymbol = 'f(a)'
   } else if (selectedTab === 'graphs2') {
     mainTab = <ArtistsHistoryChartMemorized key='historyA' />
+    buttonSymbol = 'H(a)'
+  } else if (selectedTab === 'graphs3') {
+    mainTab = <ArtistsHistoryHeatmapMemorized key='historyAheatmap' />
     buttonSymbol = '✕'
   }
 

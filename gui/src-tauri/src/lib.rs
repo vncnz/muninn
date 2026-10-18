@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use shared::database::StatsStore;
-use shared::{AlbumStats, ArtistHistoryStats, ArtistStats, SharedStats, SharedStore, Song, SongHistoryStats, SongStats};
+use shared::{AlbumStats, ArtistHistoryBuckets, ArtistHistoryStats, ArtistStats, SharedStats, SharedStore, Song, SongHistoryStats, SongStats};
 use std::collections::HashMap;
 use tauri::{Emitter, Manager};
 
@@ -68,6 +68,22 @@ fn get_songs_history_cumulative(store: tauri::State<'_, SharedStore>, from: i32,
 fn get_artists_history_cumulative(store: tauri::State<'_, SharedStore>, from: i32, to: i32, limit: i32, step: i32) -> Result<Vec<ArtistHistoryStats>, String> {
     let store = store.lock().expect("StatsStore poisoned");
     Ok(store.get_artists_history_cumulative(from, to, limit, step))
+}
+
+#[tauri::command]
+fn get_artists_heatmap(store: tauri::State<'_, SharedStore>, to: i32, total_buckets: i32, limit: i32, step: i32) -> Result<Vec<ArtistHistoryBuckets>, String> {
+    let store = store.lock().expect("StatsStore poisoned");
+    let from = to + total_buckets * step;
+    let artists: Vec<ArtistStats> = store.get_top_artists(-from, limit);
+    let mut result: Vec<ArtistHistoryBuckets> = vec![];
+    for artist in artists {
+        result.push(ArtistHistoryBuckets {
+            id: artist.id.unwrap_or_default(),
+            name: artist.name,
+            points: store.get_artist_buckets(artist.id.unwrap_or_default(), 0, total_buckets, step)
+        });
+    }
+    Ok(result)
 }
 
 #[tauri::command]
@@ -156,7 +172,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_stats, get_first_date, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_artists_history, get_songs_history_cumulative, get_songs_by_id, get_artists_history_cumulative, set_position])
+        .invoke_handler(tauri::generate_handler![get_stats, get_first_date, get_stats_all, get_top_artists, get_top_albums, get_songs_history, get_artists_history, get_songs_history_cumulative, get_songs_by_id, get_artists_history_cumulative, set_position, get_artists_heatmap])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
