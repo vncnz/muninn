@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArtistHistoryBuckets, ArtistHistoryStats } from "../types";
+import { ArtistHistoryBuckets, ArtistHistoryStats, BucketPoint, HeatmapRow } from "../types";
 import classes from "./ArtistsHistoryHeatmap.module.scss";
 import { invoke } from "@tauri-apps/api/core";
-import { timeConversion } from "../utils";
-import { GraphData, GraphSerie, HeatmapChart } from "../HeatmapChart/HeatmapChart";
+import { dateConversion, timeConversion, timeConversionDetailed } from "../utils";
+import { GraphSerie, HeatmapChart } from "../HeatmapChart/HeatmapChart";
 
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 // import { faAnglesLeft, faAngleLeft, faAngleRight, faAnglesRight } from '@fortawesome/free-solid-svg-icons'
@@ -16,9 +16,9 @@ export function ArtistsHistoryHeatmap() {
     const [historyData, sethistoryData] = useState<ArtistHistoryStats[]>([])
     const [heatmapData, setHeatmapData] = useState<ArtistHistoryBuckets[]>([])
     const [cumulative, setCumulative] = useState(true)
-    const [normalize, setNormalize] = useState(false)
     const [limit, setLimit] = useState(10)
-    const [groupingDays, setGroupingDays] = useState(1)
+    const [groupingDays, setGroupingDays] = useState(7)
+    const [buckets, setBuckets] = useState(12)
     const [range, setRange] = useState<RangeFilter>({ from: -14, to: 0 })
     const [firstDate, setFirstDate] = useState<number>(0)
     
@@ -26,6 +26,11 @@ export function ArtistsHistoryHeatmap() {
         // console.log('updateGroupingDays', e)
         let num = parseInt(e.target.value)
         if (num > 0) setGroupingDays(num)
+    }
+    const updateBuckets = (e: { target: { value: any; } }) => {
+        // console.log('updateGroupingDays', e)
+        let num = parseInt(e.target.value)
+        if (num > 0) setBuckets(num)
     }
     const updateLimit = (e: { target: { value: any; } }) => {
         // console.log('updateLimit', e)
@@ -48,14 +53,11 @@ export function ArtistsHistoryHeatmap() {
         sethistoryData(res)
 
         console.log("range", range)
-        let test = await (invoke("get_artists_heatmap", { to: range.to, totalBuckets: 10, limit: 10, step: 7 }) as Promise<ArtistHistoryBuckets[]>)
+        let test = await (invoke("get_artists_heatmap", { to: range.to, totalBuckets: buckets, limit: 10, step: groupingDays, cumulative }) as Promise<ArtistHistoryBuckets[]>)
         console.log("test heatmap", test)
-        test.sort((a,b) => {
-            return b.points.at(-1) - a.points.at(-1)
-        })
         setHeatmapData(test)
     }
-    useEffect(() => { load() }, [cumulative, groupingDays, limit, range])
+    useEffect(() => { load() }, [cumulative, groupingDays, limit, range, buckets])
 
     let uniqueDates = [...new Set(historyData.map(el => el.date))]
     uniqueDates.sort() // Already sorted in database?
@@ -70,27 +72,29 @@ export function ArtistsHistoryHeatmap() {
         let idx = uniqueDates.indexOf(v.date)
         series[v.artistid].points[idx] = v.listened_time
     })
-    /* let data: GraphData = {
-        normalize,
-        labels: uniqueDates,
-        series: Object.values(series)
-    } */
 
-    /* if (cumulative) {
-        data.series.sort((a,b) => {
-            return b.points.at(-1) - a.points.at(-1)
+    let data: HeatmapRow[] = heatmapData.map((artist: ArtistHistoryBuckets) => {
+        let points = artist.points.map((p: BucketPoint) => {
+            let v = cumulative ? p.cumulative_time : p.point_time
+            let from = dateConversion(p.date_start, 0)
+            let to = dateConversion(p.date_end, 0)
+            let tooltip = `${from} -> ${to}`
+            return {
+                v,
+                label: timeConversionDetailed(v),
+                tooltip
+            }
         })
-    } else {
-        type sumsType = Record<string, number>
-        let seriesMax: sumsType = {}
-        data.series.forEach(serie => {
-            // seriesSum[serie.label] = serie.points.reduce((partial, el) => partial + el, 0)
-            seriesMax[serie.label] = Math.max(...serie.points)
-        })
-        data.series.sort((a,b) => {
-            return seriesMax[b.label] - seriesMax[a.label]
-        })
-    } */
+        return {
+            id: artist.id,
+            label: artist.name,
+            points
+        } as HeatmapRow
+    })
+    data.sort((a,b) => {
+        // return b.points.at(-1).v - a.points.at(-1).v
+        return b.points.at(0).v - a.points.at(0).v
+    })
 
     let rangeFilterSettings: RangeSettings = {
         default: range,
@@ -108,15 +112,20 @@ export function ArtistsHistoryHeatmap() {
                 <label>
                     <span>Cumulate</span><input type="checkbox" name="cumulative" checked={cumulative} onChange={() => setCumulative(!cumulative)} />
                 </label>
-                <label>
-                    <span>Normalize</span><input type="checkbox" name="normalize" checked={normalize} onChange={() => setNormalize(!normalize)} />
-                </label>
                 <label>Bucket size
                     <input 
                         type="number" 
                         name="groupingDays" 
                         value={groupingDays} 
                         onChange={updateGroupingDays}
+                    />
+                </label>
+                <label>Buckets
+                    <input 
+                        type="number" 
+                        name="buckets" 
+                        value={buckets} 
+                        onChange={updateBuckets}
                     />
                 </label>
                 <label>Limit
@@ -128,7 +137,7 @@ export function ArtistsHistoryHeatmap() {
                     />
                 </label>
             </div>
-            <HeatmapChart data={heatmapData} />
+            <HeatmapChart data={data} />
             <ChartRangeFilter settings={rangeFilterSettings} />
         </div>
     )

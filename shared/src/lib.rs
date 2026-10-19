@@ -65,7 +65,8 @@ pub struct ArtistHistoryStats {
 #[derive(Serialize, Clone, Debug)]
 pub struct BucketPoint {
     pub index: i32,
-    pub date: String,
+    pub date_start: String,
+    pub date_end: String,
     pub cumulative_time: f64,
     pub point_time: f64
 }

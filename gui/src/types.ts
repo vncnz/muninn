@@ -86,7 +86,8 @@ export type LyricsRow = {
 
 export type BucketPoint = {
     index: number,
-    date: string,
+    date_start: string,
+    date_end: string,
     cumulative_time: number,
     point_time: number
 }
@@ -95,4 +96,16 @@ export type ArtistHistoryBuckets = {
     id: number,
     name: string,
     points: BucketPoint[]
+}
+
+export type HeatmapPoint = {
+    v: number,
+    label: string,
+    tooltip: string
+}
+
+export type HeatmapRow = {
+    id: number,
+    label: string,
+    points: HeatmapPoint[]
 }

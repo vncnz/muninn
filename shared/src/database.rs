@@ -835,65 +835,70 @@ ORDER BY bucket ASC, total_time DESC;
 WITH RECURSIVE
 params AS (
     SELECT 
-        (SELECT MAX(day) FROM listening_days) AS ref_date -- Data di riferimento (default: l'ultimo giorno registrato nel DB)
+        (SELECT MAX(day) FROM listening_days) AS ref_date
 ),
--- Generate buckets from 0 to total_buckets - 1
+-- Generate all buckets (including an extra bucket for cumulative differences)
 buckets(bucket_index) AS (
     SELECT 0
     UNION ALL
     SELECT bucket_index + 1 FROM buckets, params 
-    WHERE bucket_index < {total_buckets} - 1
+    WHERE bucket_index < {total_buckets}
 ),
--- Upper bound for each bucket
+-- Compute bound dates for each bucket
 bucket_bounds AS (
     SELECT 
         b.bucket_index,
-        date(p.ref_date, '-' || (b.bucket_index * {bucket_size}) || ' days') AS bucket_end_date
+        date(p.ref_date, '-' || (b.bucket_index * {bucket_size}) || ' days') AS bound_date
     FROM buckets b
     CROSS JOIN params p
 ),
--- Filter by artist
 artist_songs AS (
     SELECT DISTINCT sa.song_id
     FROM song_artists sa
+    CROSS JOIN params p
     WHERE sa.artist_id = {artist}
 ),
--- For each (bucket, song), find last record <= bucket_end_date
+-- Find last record for each song and each bucket
 latest_song_records AS (
     SELECT 
         bb.bucket_index,
+        bb.bound_date,
         asng.song_id,
         MAX(ld.day) AS max_day
     FROM bucket_bounds bb
     CROSS JOIN artist_songs asng
-    JOIN listening_days ld ON ld.song_id = asng.song_id AND ld.day <= bb.bucket_end_date
-    GROUP BY bb.bucket_index, asng.song_id
+    JOIN listening_days ld ON ld.song_id = asng.song_id AND ld.day <= bb.bound_date
+    GROUP BY bb.bucket_index, bb.bound_date, asng.song_id
 ),
--- Recover the cumulative_seconds
-bucket_song_values AS (
+-- Sum cumulative times
+bound_totals AS (
     SELECT 
-        lsr.bucket_index,
-        lsr.song_id,
-        ld.cumulative_seconds
-    FROM latest_song_records lsr
-    JOIN listening_days ld ON ld.song_id = lsr.song_id AND ld.day = lsr.max_day
+        bb.bucket_index,
+        bb.bound_date,
+        COALESCE(SUM(ld.cumulative_seconds), 0) AS cumulative_at_bound
+    FROM bucket_bounds bb
+    LEFT JOIN latest_song_records lsr ON bb.bucket_index = lsr.bucket_index
+    LEFT JOIN listening_days ld ON ld.song_id = lsr.song_id AND ld.day = lsr.max_day
+    GROUP BY bb.bucket_index, bb.bound_date
 )
--- Sum all cumulative_seconds per bucket to get the total listened time for the artist in that bucket
+
 SELECT 
-    bb.bucket_index,
-    bb.bucket_end_date,
-    COALESCE(SUM(bsv.cumulative_seconds), 0) AS total_cumulative_seconds
-FROM bucket_bounds bb
-LEFT JOIN bucket_song_values bsv ON bb.bucket_index = bsv.bucket_index
-GROUP BY bb.bucket_index, bb.bucket_end_date
-ORDER BY bb.bucket_index ASC;
+    bt.bucket_index,
+    date(bt.bound_date, '+' || {bucket_size} || ' days') AS bucket_start_date,
+    bt.bound_date AS bucket_end_date,
+    bt.cumulative_at_bound AS cumulative_end,
+    bt.cumulative_at_bound - LEAD(bt.cumulative_at_bound, 1, 0) OVER (ORDER BY bt.bucket_index ASC) AS delta_seconds
+FROM bound_totals bt
+WHERE bt.bucket_index < {total_buckets}
+ORDER BY bt.bucket_index ASC;
         ")).expect("prepare ko");
         let points = stmt.query_map([], |row| {
             Ok(BucketPoint { 
                 index: 0,
-                date: row.get(1).expect("Date in query"),
-                cumulative_time: row.get(2).expect("listened_time in query"),
-                point_time: 0.0
+                date_start: row.get(1).expect("Date_start in query"),
+                date_end: row.get(2).expect("Date_end in query"),
+                cumulative_time: row.get(3).expect("cumulative_time in query"),
+                point_time: row.get(4).expect("point_time in query")
             })
         });
 

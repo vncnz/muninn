@@ -1,3 +1,4 @@
+use std::eprintln;
 use std::sync::{Arc, Mutex};
 use shared::database::StatsStore;
 use shared::{AlbumStats, ArtistHistoryBuckets, ArtistHistoryStats, ArtistStats, SharedStats, SharedStore, Song, SongHistoryStats, SongStats};
@@ -71,16 +72,18 @@ fn get_artists_history_cumulative(store: tauri::State<'_, SharedStore>, from: i3
 }
 
 #[tauri::command]
-fn get_artists_heatmap(store: tauri::State<'_, SharedStore>, to: i32, total_buckets: i32, limit: i32, step: i32) -> Result<Vec<ArtistHistoryBuckets>, String> {
+fn get_artists_heatmap(store: tauri::State<'_, SharedStore>, to: i32, total_buckets: i32, limit: i32, step: i32, cumulative: bool) -> Result<Vec<ArtistHistoryBuckets>, String> {
     let store = store.lock().expect("StatsStore poisoned");
-    let from = to + total_buckets * step;
+    let from = if cumulative { 10000 } else { to + total_buckets * step };
     let artists: Vec<ArtistStats> = store.get_top_artists(-from, limit);
     let mut result: Vec<ArtistHistoryBuckets> = vec![];
     for artist in artists {
+        let mut points = store.get_artist_buckets(artist.id.unwrap_or_default(), 0, total_buckets + 1, step);
+        points.remove(points.len() - 1);
         result.push(ArtistHistoryBuckets {
             id: artist.id.unwrap_or_default(),
             name: artist.name,
-            points: store.get_artist_buckets(artist.id.unwrap_or_default(), 0, total_buckets, step)
+            points
         });
     }
     Ok(result)
