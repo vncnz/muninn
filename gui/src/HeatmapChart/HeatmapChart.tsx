@@ -1,6 +1,6 @@
 import { JSX, useLayoutEffect, useRef, useState } from "react";
 import classes from "./HeatmapChart.module.scss";
-import { HeatmapRow } from "../types";
+import { HeatmapRow, MultiColLabel } from "../types";
 
 export interface GraphSerie {
     id: number;
@@ -15,7 +15,7 @@ export interface GraphData {
     series: GraphSerie[]; // y axis
 }
 
-export function HeatmapChart({ data }: { data: HeatmapRow[] }) {
+export function HeatmapChart({ data, legend }: { data: HeatmapRow[], legend: MultiColLabel[] }) {
 
     const svgRef = useRef<HTMLDivElement | null>(null)
     const [size, setSize] = useState<{ width: number; height: number } | null>(null)
@@ -54,6 +54,18 @@ export function HeatmapChart({ data }: { data: HeatmapRow[] }) {
             elements.push(<div className={classes.point} style={{ opacity }} title={point.tooltip}>{point.label}</div>)
         })
     })
+
+    elements.push(<div></div>)
+
+    /* let svg = <svg className={classes.timespan} width="100%" height="3rem">
+        
+    </svg>
+    elements.push(<div style={{ "gridColumn": `span ${row_length}` }}>{svg}</div>) */
+    legend.forEach(l => {
+        elements.push(<div className={classes.footer} style={{ "gridColumn": `span ${l.width}` }}>{l.label}</div>)
+    })
+
+
 
     let heatmap = <div className={classes.heatmap} style={{ "gridTemplateColumns": `auto repeat(${row_length}, 3rem)` }}>
         {elements}

@@ -109,3 +109,8 @@ export type HeatmapRow = {
     label: string,
     points: HeatmapPoint[]
 }
+
+export type MultiColLabel = {
+  label: string,
+  width: number
+}

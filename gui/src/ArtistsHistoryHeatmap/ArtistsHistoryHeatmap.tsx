@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArtistHistoryBuckets, ArtistHistoryStats, BucketPoint, HeatmapRow } from "../types";
+import { ArtistHistoryBuckets, ArtistHistoryStats, BucketPoint, HeatmapRow, MultiColLabel } from "../types";
 import classes from "./ArtistsHistoryHeatmap.module.scss";
 import { invoke } from "@tauri-apps/api/core";
 import { dateConversion, timeConversion, timeConversionDetailed } from "../utils";
@@ -53,7 +53,7 @@ export function ArtistsHistoryHeatmap() {
         sethistoryData(res)
 
         console.log("range", range)
-        let test = await (invoke("get_artists_heatmap", { to: range.to, totalBuckets: buckets, limit: 10, step: groupingDays, cumulative }) as Promise<ArtistHistoryBuckets[]>)
+        let test = await (invoke("get_artists_heatmap", { to: range.to, totalBuckets: buckets, limit, step: groupingDays, cumulative }) as Promise<ArtistHistoryBuckets[]>)
         console.log("test heatmap", test)
         setHeatmapData(test)
     }
@@ -96,6 +96,25 @@ export function ArtistsHistoryHeatmap() {
         return b.points.at(0).v - a.points.at(0).v
     })
 
+    let last = ""
+    let legend: MultiColLabel[] = []
+    if (heatmapData?.length) {
+        heatmapData[0].points.forEach(p => {
+            let leg = new Date(p.date_start).toLocaleDateString("en-US", {
+                month: 'short'
+            })
+            if (leg != last) {
+                legend.push({
+                    width: 1,
+                    label: leg
+                })
+                last = leg
+            } else {
+                legend[legend.length - 1].width += 1
+            }
+        })
+    }
+
     let rangeFilterSettings: RangeSettings = {
         default: range,
         min: firstDate,
@@ -137,7 +156,7 @@ export function ArtistsHistoryHeatmap() {
                     />
                 </label>
             </div>
-            <HeatmapChart data={data} />
+            <HeatmapChart data={data} legend={legend} />
             <ChartRangeFilter settings={rangeFilterSettings} />
         </div>
     )
