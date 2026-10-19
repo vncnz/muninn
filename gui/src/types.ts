@@ -83,3 +83,16 @@ export type LyricsRow = {
     time: number,
     text: String
 }
+
+export type BucketPoint = {
+    index: number,
+    date: string,
+    cumulative_time: number,
+    point_time: number
+}
+
+export type ArtistHistoryBuckets = {
+    id: number,
+    name: string,
+    points: BucketPoint[]
+}

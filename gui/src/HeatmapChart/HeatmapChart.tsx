@@ -3,6 +3,7 @@
 import { JSX, useLayoutEffect, useRef, useState } from "react";
 import classes from "./HeatmapChart.module.scss";
 import { dateConversion, dateToHuman, getPalette, timeConversion, timeConversionDetailed } from "../utils";
+import { ArtistHistoryBuckets } from "../types";
 
 export interface GraphSerie {
     id: number;
@@ -17,22 +18,10 @@ export interface GraphData {
     series: GraphSerie[]; // y axis
 }
 
-export function HeatmapChart({ data }: { data: GraphData }) {
+export function HeatmapChart({ data }: { data: ArtistHistoryBuckets[] }) {
 
     const svgRef = useRef<HTMLDivElement | null>(null)
-
-    // const [historyData, sethistoryData] = useState<SongHistoryStats[]>([])
-    // const [songCacheData, setSongCacheData] = useState<SongsMap>({})
     const [size, setSize] = useState<{ width: number; height: number } | null>(null)
-    // const [cumulative, setCumulative] = useState(true)
-    // const [normalize, setNormalize] = useState(false)
-    // const [groupingDays, setGroupingDays] = useState(1)
-
-    /* const updateGroupingDays = (e: { target: { value: any; } }) => {
-        console.log('updateGroupingDays', e)
-        let num = parseInt(e.target.value)
-        if (num > 0) setGroupingDays(num)
-    } */
 
     useLayoutEffect(() => {
         if (!svgRef.current) return
@@ -46,40 +35,40 @@ export function HeatmapChart({ data }: { data: GraphData }) {
         return () => observer.disconnect()
     }, [])
 
-    let dates: {date: String, max: number}[] = data.labels.map(lbl => { return { date: lbl, max: 0 } })
-    data.series.forEach((serie: GraphSerie) => {
+    // let dates: {date: String, max: number}[] = data.labels.map(lbl => { return { date: lbl, max: 0 } })
+    /* data.series.forEach((serie: GraphSerie) => {
         serie.points.forEach((v: number, idx: number) => {
             dates[idx].max = Math.max(dates[idx].max, v)
         })
-    })
-    let all_max = Math.max(...dates.map(el => el.max))
-    let row_length = dates.length
+    }) */
+    let all_max = Math.max(...data.map(el => Math.max(...el.points.map(p => p.cumulative_time))))
+    // let row_length = dates.length
 
     let flows: JSX.Element[] = []
 
-    let xspace = (size?.width || 100) / dates.length
-    let yspace = size?.height || 100
+    // let xspace = (size?.width || 100) / dates.length
+    // let yspace = size?.height || 100
 
-    let createPoint = (v: number, y: number, i: number, serie: GraphSerie, color: string, date: String) => {
+    /* let createPoint = (v: number, y: number, i: number, serie: GraphSerie, color: string, date: String) => {
         let el = <circle cx={i*xspace} cy={y*yspace} r="6" stroke={color} fill="transparent" strokeWidth="2">
             <title>(id {serie.id}) {serie.label} ({serie.dataToString(v)}, {dateToHuman(date as string)})</title>
         </circle>
         return el
-    }
-    let createLine = (x1: number, y1: number, x2: number, y2: number, color: string) => {
+    } */
+    /* let createLine = (x1: number, y1: number, x2: number, y2: number, color: string) => {
         let el = <line x1={x1*xspace+5} y1={y1*yspace} x2={x2*xspace-5} y2={y2*yspace} stroke={color} fill="transparent" strokeWidth="2"></line>
         return el
-    }
-    let createBezier = (x1: number, y1: number, x2: number, y2: number, color: string) => {
+    } */
+    /* let createBezier = (x1: number, y1: number, x2: number, y2: number, color: string) => {
         let c1x = (x1+x2)/2
         let c1y = y1
         let c2x = (x1+x2)/2
         let c2y = y2
         let el = <path d={`M ${x1*xspace+5} ${y1*yspace} C ${c1x*xspace} ${c1y*yspace}, ${c2x*xspace} ${c2y*yspace}, ${x2*xspace-5} ${y2*yspace}`} stroke={color} fill="transparent" strokeWidth="2" />
         return el
-    }
+    } */
 
-    console.log('data', data)
+    /* console.log('data', data)
     let colors = getPalette(data.series.length)
     data.series.forEach((serie: GraphSerie) => {
         let color = colors[serie.id % colors.length]
@@ -108,7 +97,7 @@ export function HeatmapChart({ data }: { data: GraphData }) {
                 last_pointed_idx = idx
             }
         })
-    })
+    }) */
     /* let svg = <svg viewBox={`0 0 ${size?.width || 1}, ${size?.height || 1}`}>
         {flows}
     </svg> */
@@ -116,20 +105,22 @@ export function HeatmapChart({ data }: { data: GraphData }) {
     // let legend = data.labels.map(dt => dateConversion(dt))
 
     let elements: JSX.Element[] = []
+    let row_length = data?.length ? data[0].points.length : 1
     /* legend.forEach(l => elements.push(<div>{l}</div>))
     elements.push(<div></div>) */
 
-    data.series.forEach(serie => {
+    data.forEach(serie => {
         serie.points.forEach((point, idx) => {
-            let opacity = Math.pow(point/all_max, 1.5)
+            let opacity = Math.pow(point.cumulative_time/all_max, 1.5)
             // let t = (point/all_max*100).toFixed(0) + '%'
-            let t = timeConversionDetailed(point)
-            let from = dateConversion(data.labels[idx], 0)
-            let to = data.labels[idx+1] ? dateConversion(data.labels[idx+1], -1) : "now"
-            let title = `${from} -> ${to}`
+            let t = timeConversionDetailed(point.cumulative_time)
+            let from = dateConversion(point.date, 0)
+            // let to = data.labels[idx+1] ? dateConversion(data.labels[idx+1], -1) : "now"
+            // let title = `${from} -> ${to}`
+            let title = from
             elements.push(<div className={classes.point} style={{ opacity }} title={title}>{t}</div>)
         })
-        elements.push(<div className={classes.rowdata}>{serie.label}</div>)
+        elements.push(<div className={classes.rowdata}>{serie.name}</div>)
     })
 
     let heatmap = <div className={classes.heatmap} style={{ "gridTemplateColumns": `repeat(${row_length}, 3rem) auto` }}>

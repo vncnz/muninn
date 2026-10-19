@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArtistHistoryStats } from "../types";
+import { ArtistHistoryBuckets, ArtistHistoryStats } from "../types";
 import classes from "./ArtistsHistoryHeatmap.module.scss";
 import { invoke } from "@tauri-apps/api/core";
 import { timeConversion } from "../utils";
@@ -14,6 +14,7 @@ type SerieMap = Record<string, GraphSerie>
 export function ArtistsHistoryHeatmap() {
 
     const [historyData, sethistoryData] = useState<ArtistHistoryStats[]>([])
+    const [heatmapData, setHeatmapData] = useState<ArtistHistoryBuckets[]>([])
     const [cumulative, setCumulative] = useState(true)
     const [normalize, setNormalize] = useState(false)
     const [limit, setLimit] = useState(10)
@@ -47,8 +48,12 @@ export function ArtistsHistoryHeatmap() {
         sethistoryData(res)
 
         console.log("range", range)
-        let test = await (invoke("get_artists_heatmap", { to: range.to, totalBuckets: 40, limit: 10, step: 7 }))
+        let test = await (invoke("get_artists_heatmap", { to: range.to, totalBuckets: 10, limit: 10, step: 7 }) as Promise<ArtistHistoryBuckets[]>)
         console.log("test heatmap", test)
+        test.sort((a,b) => {
+            return b.points.at(-1) - a.points.at(-1)
+        })
+        setHeatmapData(test)
     }
     useEffect(() => { load() }, [cumulative, groupingDays, limit, range])
 
@@ -65,13 +70,13 @@ export function ArtistsHistoryHeatmap() {
         let idx = uniqueDates.indexOf(v.date)
         series[v.artistid].points[idx] = v.listened_time
     })
-    let data: GraphData = {
+    /* let data: GraphData = {
         normalize,
         labels: uniqueDates,
         series: Object.values(series)
-    }
+    } */
 
-    if (cumulative) {
+    /* if (cumulative) {
         data.series.sort((a,b) => {
             return b.points.at(-1) - a.points.at(-1)
         })
@@ -85,7 +90,7 @@ export function ArtistsHistoryHeatmap() {
         data.series.sort((a,b) => {
             return seriesMax[b.label] - seriesMax[a.label]
         })
-    }
+    } */
 
     let rangeFilterSettings: RangeSettings = {
         default: range,
@@ -123,7 +128,7 @@ export function ArtistsHistoryHeatmap() {
                     />
                 </label>
             </div>
-            <HeatmapChart data={data} />
+            <HeatmapChart data={heatmapData} />
             <ChartRangeFilter settings={rangeFilterSettings} />
         </div>
     )
