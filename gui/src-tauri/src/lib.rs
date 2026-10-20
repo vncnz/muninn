@@ -78,7 +78,8 @@ fn get_artists_heatmap(store: tauri::State<'_, SharedStore>, to: i32, total_buck
     let artists: Vec<ArtistStats> = store.get_top_artists(-from, limit);
     let mut result: Vec<ArtistHistoryBuckets> = vec![];
     for artist in artists {
-        let mut points = store.get_artist_buckets(artist.id.unwrap_or_default(), 0, total_buckets + 1, step);
+        store.get_artist_buckets(artist.id.unwrap_or_default(), 0, total_buckets + 1, step);
+        let mut points = store.get_artist_buckets1(artist.id.unwrap_or_default(), 0, total_buckets + 1, step);
         points.remove(points.len() - 1);
         result.push(ArtistHistoryBuckets {
             id: artist.id.unwrap_or_default(),

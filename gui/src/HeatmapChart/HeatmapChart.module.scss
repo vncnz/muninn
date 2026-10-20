@@ -14,13 +14,14 @@
         gap: 3px;
 
         .point {
-            background-color: blue;
+            // background-color: blue;
             border-radius: 3px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 80%;
             position: relative;
+            border: 1px solid rgba(0,0,0,0.05);
 
             span {
                 position: absolute;

@@ -1,11 +1,13 @@
 use std::path::Path;
+use std::str::FromStr;
 
 use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
 
 use crate::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, BucketPoint, Song, SongHistoryStats};
+use crate::time_of_scope::TimeOfScope;
 
-use chrono;
+use chrono::{self, Duration, NaiveDate};
 
 pub struct StatsStore {
     conn: rusqlite::Connection,
@@ -449,6 +451,7 @@ impl StatsStore {
 
 
     pub fn get_top_artists(&self, from: i32, limit: i32) -> Vec<ArtistStats> {
+        let _time = TimeOfScope::new("get_top_artists");
         let to = 0;
 
         let mut results = Vec::new();
@@ -737,6 +740,7 @@ ORDER BY r.bucket ASC, r.listened_time DESC;
     }
 
     pub fn get_artists_history_cumulative(&self, from: i32, to: i32, limit: i32, step: i32) -> Vec<ArtistHistoryStats> {
+        let _time = TimeOfScope::new("get_artist_history_cumulative");
         let anchor = "1970-01-01"; // Per bucket alignment
         let only_active = false;
 
@@ -829,7 +833,7 @@ ORDER BY bucket ASC, total_time DESC;
     }
 
     pub fn get_artist_buckets(&self, artist: i32, _from: i32, total_buckets: i32, bucket_size: i32) -> Vec<BucketPoint> {
-        
+        let _time = TimeOfScope::new("get_artist_buckets");
         let mut results = Vec::new();
         let mut stmt = self.conn.prepare(&format!(r"
 WITH RECURSIVE
@@ -855,7 +859,6 @@ bucket_bounds AS (
 artist_songs AS (
     SELECT DISTINCT sa.song_id
     FROM song_artists sa
-    CROSS JOIN params p
     WHERE sa.artist_id = {artist}
 ),
 -- Find last record for each song and each bucket
@@ -911,4 +914,106 @@ ORDER BY bt.bucket_index ASC;
         }
         results
     }
+
+    // TODO: try alternative query, computing all advanced information rust-side
+    pub fn get_artist_buckets1(&self, artist: i32, from: i32, total_buckets: i32, bucket_size: i32) -> Vec<BucketPoint> {
+        let _time = TimeOfScope::new("get_artist_buckets1");
+        let to = from;
+        let from = to - total_buckets * bucket_size;
+        // let mut results = Vec::new();
+        let mut stmt = self.conn.prepare(&format!(r"
+SELECT 
+    ld.day,
+    ld.seconds,
+    ld.song_id,
+    ld.cumulative_seconds
+FROM listening_days ld
+LEFT JOIN song_artists sa ON sa.song_id = ld.song_id
+WHERE sa.artist_id = {artist}
+  AND ld.day BETWEEN date('now', '{from} days', 'localtime') AND date('now', '{to} days', 'localtime')
+ORDER BY ld.day ASC;
+        ")).expect("prepare ko");
+        let points = stmt.query_map([], |row| {
+            Ok(DailyListenRecord {
+                day: row.get(0).expect("Day in query"),
+                seconds: row.get(1).expect("Seconds in query"),
+                song_id: row.get(2).expect("Song in query"),
+                cumulative_seconds: row.get(3).expect("Cumulative seconds in query")
+            })
+        });
+
+        let mut points_ok: Vec<DailyListenRecord> = vec![];
+        if let Ok(points) = points {
+            for point in points {
+                if let Ok(p) = point {
+                    points_ok.push(p);
+                }
+            }
+        }
+        let results = self.compute_buckets(points_ok.as_slice(), NaiveDate::from_str("2026-10-20").unwrap(), bucket_size as i64, total_buckets as usize); // - Duration::days blablabla
+        results
+    }
+
+    fn compute_buckets(
+        &self,
+        records: &[DailyListenRecord], 
+        ref_date: NaiveDate,
+        bucket_size_days: i64, 
+        total_buckets: usize
+    ) -> Vec<BucketPoint> {
+        // TODO: Fix cumulative time (missing last element in the sum)
+        let mut results = Vec::new();
+
+        for i in 0..total_buckets {
+            // Calcola i confini del bucket (es. dal più recente a ritroso)
+            let date_end = ref_date - Duration::days((i as i64) * bucket_size_days);
+            let date_start = date_end - Duration::days(bucket_size_days - 1);
+
+            // Filtra i record che cadono all'interno di questo bucket
+            let bucket_records: Vec<&DailyListenRecord> = records
+                .iter()
+                .filter(|r| r.day >= date_start && r.day <= date_end)
+                .collect();
+
+            // Somma i secondi ascoltati in questo bucket
+            let total_seconds: i64 = bucket_records.iter().map(|r| r.seconds as i64).sum();
+
+            // Trova la canzone più ascoltata in questo bucket (tramite un semplice raggruppamento in-memory)
+            let mut song_seconds: HashMap<&i64, i64> = HashMap::new();
+            for r in &bucket_records {
+                *song_seconds.entry(&r.song_id).or_insert(0) += r.seconds as i64;
+            }
+
+            /* let top_song = song_seconds
+                .into_iter()
+                .max_by_key(|&(_, secs)| secs)
+                .map(|(title, _)| title.to_string()); */
+
+            results.push(BucketPoint {
+                index: i as i32,
+                date_start: date_start.to_string(),
+                date_end: date_end.to_string(),
+                cumulative_time: total_seconds as f64,
+                point_time: total_seconds as f64,
+            });
+        }
+
+        results.reverse();
+
+        let stop = results.len()-1;
+        for i in 0..stop {
+            results[i+1].cumulative_time = results[i].cumulative_time + results[i].point_time;
+        }
+
+        results.reverse();
+
+        results
+    }
+}
+
+struct DailyListenRecord {
+    song_id: i64,
+    day: NaiveDate,
+    seconds: f64,
+    cumulative_seconds: f64
 }
