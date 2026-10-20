@@ -51,7 +51,12 @@ export function HeatmapChart({ data, legend }: { data: HeatmapRow[], legend: Mul
         serie.points.forEach(point => {
             let opacity = Math.pow(point.v/all_max, 1.5)
             // let t = (point/all_max*100).toFixed(0) + '%'
-            elements.push(<div className={classes.point} style={{ opacity }} title={point.tooltip}>{point.label}</div>)
+            elements.push(
+                <div className={classes.point} style={{ 'backgroundColor': `rgba(0, 0, 255, ${opacity})` }} title={point.tooltip}>
+                    {/*<span>{point.label}</span>*/}
+                    {row_length < 13 ? point.label : ''}
+                </div>
+            )
         })
     })
 
@@ -67,7 +72,7 @@ export function HeatmapChart({ data, legend }: { data: HeatmapRow[], legend: Mul
 
 
 
-    let heatmap = <div className={classes.heatmap} style={{ "gridTemplateColumns": `auto repeat(${row_length}, 3rem)` }}>
+    let heatmap = <div className={classes.heatmap} style={{ "gridTemplateColumns": `auto repeat(${row_length}, 1fr)` }}>
         {elements}
     </div>
 

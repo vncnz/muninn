@@ -52,14 +52,16 @@ export function timeConversionDetailed (secs: number) {
     const hours = (secs / (60 * 60)).toFixed(0);
     const days = (secs / (60 * 60 * 24)).toFixed(0);
 
-    if (secs < 60) {
-        return secs + "\xa0s";
+    if (secs === 0) {
+        return '.'
+    } if (secs < 60) {
+        return secs + "s";
     } else if (parseFloat(minutes) < 60) {
-        return minutes + "\xa0m";
+        return minutes + "m";
     } else if (parseFloat(hours) < 24) {
         return hours + "h" + (parseInt(minutes) % 60) + "m";
     } else {
-        return days + "\xa0d" + hours + "\xa0h"
+        return days + "d" + hours + "h"
     }
 }
 

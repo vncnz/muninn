@@ -16,7 +16,7 @@ export function ArtistsHistoryHeatmap() {
     const [historyData, sethistoryData] = useState<ArtistHistoryStats[]>([])
     const [heatmapData, setHeatmapData] = useState<ArtistHistoryBuckets[]>([])
     const [cumulative, setCumulative] = useState(true)
-    const [limit, setLimit] = useState(10)
+    const [limit, setLimit] = useState(8)
     const [groupingDays, setGroupingDays] = useState(7)
     const [buckets, setBuckets] = useState(12)
     const [range, setRange] = useState<RangeFilter>({ from: -14, to: 0 })
@@ -35,7 +35,7 @@ export function ArtistsHistoryHeatmap() {
     const updateLimit = (e: { target: { value: any; } }) => {
         // console.log('updateLimit', e)
         let num = parseInt(e.target.value)
-        if (num > 9) setLimit(num)
+        if (num > 7) setLimit(num)
     }
 
     const first = async () => {
@@ -78,10 +78,11 @@ export function ArtistsHistoryHeatmap() {
             let v = cumulative ? p.cumulative_time : p.point_time
             let from = dateConversion(p.date_start, 0)
             let to = dateConversion(p.date_end, 0)
-            let tooltip = `${from} -> ${to}`
+            let humanTime = timeConversionDetailed(v)
+            let tooltip = `${humanTime} between ${from} and ${to}`
             return {
                 v,
-                label: timeConversionDetailed(v),
+                label: humanTime,
                 tooltip
             }
         })
@@ -91,10 +92,10 @@ export function ArtistsHistoryHeatmap() {
             points
         } as HeatmapRow
     })
-    data.sort((a,b) => {
+    /* data.sort((a,b) => {
         // return b.points.at(-1).v - a.points.at(-1).v
         return b.points.at(0).v - a.points.at(0).v
-    })
+    }) */
 
     let last = ""
     let legend: MultiColLabel[] = []
@@ -115,7 +116,7 @@ export function ArtistsHistoryHeatmap() {
         })
     }
 
-    let rangeFilterSettings: RangeSettings = {
+    /* let rangeFilterSettings: RangeSettings = {
         default: range,
         min: firstDate,
         max: 0,
@@ -123,7 +124,7 @@ export function ArtistsHistoryHeatmap() {
             // console.log('settings', settings)
             setRange(settings)
         }
-    }
+    } */
 
     return (
         <div className={classes.chart}>
@@ -157,7 +158,7 @@ export function ArtistsHistoryHeatmap() {
                 </label>
             </div>
             <HeatmapChart data={data} legend={legend} />
-            <ChartRangeFilter settings={rangeFilterSettings} />
+            {/*<ChartRangeFilter settings={rangeFilterSettings} />*/}
         </div>
     )
 }
