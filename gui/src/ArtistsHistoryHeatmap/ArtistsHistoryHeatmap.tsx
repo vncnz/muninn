@@ -57,7 +57,7 @@ export function ArtistsHistoryHeatmap() {
         console.log("test heatmap", test)
         setHeatmapData(test)
     }
-    useEffect(() => { load() }, [cumulative, groupingDays, limit, range, buckets])
+    useEffect(() => { load() }, [groupingDays, limit, range, buckets])
 
     let uniqueDates = [...new Set(historyData.map(el => el.date))]
     uniqueDates.sort() // Already sorted in database?
