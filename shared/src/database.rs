@@ -915,7 +915,6 @@ ORDER BY bt.bucket_index ASC;
         results
     }
 
-    // TODO: try alternative query, computing all advanced information rust-side
     pub fn get_artist_buckets1(&self, artist: i32, from: i32, total_buckets: i32, bucket_size: i32) -> Vec<BucketPoint> {
         let _time = TimeOfScope::new("get_artist_buckets1");
         let to = from;
@@ -961,7 +960,6 @@ ORDER BY ld.day ASC;
         bucket_size_days: i64, 
         total_buckets: usize
     ) -> Vec<BucketPoint> {
-        // TODO: Fix cumulative time (missing last element in the sum)
         let mut results = Vec::new();
 
         for i in 0..total_buckets {
@@ -998,14 +996,21 @@ ORDER BY ld.day ASC;
             });
         }
 
-        results.reverse();
+        /* results.reverse();
 
         let stop = results.len()-1;
+        results[0].cumulative_time = results[0].point_time;
         for i in 0..stop {
             results[i+1].cumulative_time = results[i].cumulative_time + results[i].point_time;
         }
 
-        results.reverse();
+        results.reverse(); */
+
+        let stop = results.len()-1;
+        results[stop].cumulative_time = results[stop].point_time;
+        for i in (1..stop).rev() {
+            results[i-1].cumulative_time = results[i].cumulative_time + results[i-1].point_time;
+        }
 
         results
     }
