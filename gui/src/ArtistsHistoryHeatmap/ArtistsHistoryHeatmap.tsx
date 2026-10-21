@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ArtistHistoryBuckets, ArtistHistoryStats, BucketPoint, HeatmapRow, MultiColLabel } from "../types";
 import classes from "./ArtistsHistoryHeatmap.module.scss";
 import { invoke } from "@tauri-apps/api/core";
-import { dateConversion, timeConversion, timeConversionDetailed } from "../utils";
+import { calculateDateSpanMonths, dateConversion, timeConversion, timeConversionDetailed } from "../utils";
 import { GraphSerie, HeatmapChart } from "../HeatmapChart/HeatmapChart";
 
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -97,6 +97,16 @@ export function ArtistsHistoryHeatmap() {
         return b.points.at(0).v - a.points.at(0).v
     }) */
 
+    let legend: MultiColLabel[] = []
+    let months = calculateDateSpanMonths(range.to - buckets * groupingDays, range.to).reverse()
+
+    months.forEach(m => {
+        legend.push({
+            width: m.percentage,
+            label: m.monthName.substring(0,3)
+        })
+    })
+/*
     let last = ""
     let legend: MultiColLabel[] = []
     if (heatmapData?.length) {

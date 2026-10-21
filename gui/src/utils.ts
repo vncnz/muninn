@@ -161,3 +161,69 @@ export const parseLyricsString = (raw: String) => {
   }
   return lyricsRows
 }
+
+interface MonthBreakdown {
+  year: number;
+  month: number; // 0-indexed (0 = January, etc.)
+  monthName: string;
+  daysInSpan: number;
+  percentage: number;
+}
+
+export const calculateDateSpanMonths = (daysAgoA: number, daysAgoB: number): MonthBreakdown[] => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Get the two dates
+  const dateA = new Date(today);
+  dateA.setDate(today.getDate() - daysAgoA);
+
+  const dateB = new Date(today);
+  dateB.setDate(today.getDate() - daysAgoB);
+
+  // Ensure startDate is earlier and endDate is later
+  const startDate = dateA < dateB ? dateA : dateB;
+  const endDate = dateA > dateB ? dateA : dateB;
+
+  // Calculate total duration in days (inclusive of both start and end days)
+  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+  const totalDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+  const monthMap: { [key: string]: number } = {};
+
+  // Iterate through each day in the range and tally it by month
+  const current = new Date(startDate);
+  while (current <= endDate) {
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    const key = `${year}-${month}`;
+
+    monthMap[key] = (monthMap[key] || 0) + 1;
+
+    // Move to next day
+    current.setDate(current.getDate() + 1);
+  }
+
+  // Format the results into an array with percentages
+  const results: MonthBreakdown[] = Object.keys(monthMap).map((key) => {
+    const [yearStr, monthStr] = key.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const daysInSpan = monthMap[key];
+    const percentage = Number(((daysInSpan / totalDays) * 100).toFixed(2));
+
+    const monthName = new Date(year, month, 1).toLocaleString("default", {
+      month: "long",
+    });
+
+    return {
+      year,
+      month,
+      monthName,
+      daysInSpan,
+      percentage,
+    };
+  });
+
+  return results;
+}

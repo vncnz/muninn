@@ -66,9 +66,13 @@ export function HeatmapChart({ data, legend }: { data: HeatmapRow[], legend: Mul
         
     </svg>
     elements.push(<div style={{ "gridColumn": `span ${row_length}` }}>{svg}</div>) */
-    legend.forEach(l => {
-        elements.push(<div className={classes.footer} style={{ "gridColumn": `span ${l.width}` }}>{l.label}</div>)
-    })
+    
+        // elements.push(<div className={classes.footer} style={{ "gridColumn": `span ${l.width}` }}>{l.label}</div>)
+    elements.push(
+        <div className={classes.footer} style={{ "gridColumn": `span ${row_length}` }}>
+            {legend.map(l => <span style={{ "flex": `${Math.round(l.width*100)} 1 1px` }}>{l.label}</span>)}
+        </div>
+    )
 
 
 

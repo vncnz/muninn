@@ -52,7 +52,13 @@
             justify-content: center;
             align-items: center;
             font-size: 75%;
-            border-top: 1px solid gray;
+            display: flex;
+            gap: 2px;
+
+            span {
+                padding: 0;
+                border-top: 1px solid gray;
+            }
         }
         .timespan {
             // background-color: red;
