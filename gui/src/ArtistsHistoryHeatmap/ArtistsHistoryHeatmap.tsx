@@ -13,7 +13,7 @@ type SerieMap = Record<string, GraphSerie>
 
 export function ArtistsHistoryHeatmap() {
 
-    const [historyData, sethistoryData] = useState<ArtistHistoryStats[]>([])
+    // const [historyData, sethistoryData] = useState<ArtistHistoryStats[]>([])
     const [heatmapData, setHeatmapData] = useState<ArtistHistoryBuckets[]>([])
     const [cumulative, setCumulative] = useState(true)
     const [limit, setLimit] = useState(8)
@@ -47,10 +47,10 @@ export function ArtistsHistoryHeatmap() {
     useEffect(() => { first() }, [])
 
     const load = async () => {
-        let method = cumulative ? "get_artists_history_cumulative" : "get_artists_history"
+        /* let method = cumulative ? "get_artists_history_cumulative" : "get_artists_history"
         let res = await (invoke(method, { from: range.from, to: range.to, limit, step: groupingDays }) as Promise<ArtistHistoryStats[]>)
         // console.log(method, res)
-        sethistoryData(res)
+        sethistoryData(res) */
 
         console.log("range", range)
         let test = await (invoke("get_artists_heatmap", { to: range.to, totalBuckets: buckets, limit, step: groupingDays, cumulative }) as Promise<ArtistHistoryBuckets[]>)
@@ -59,7 +59,7 @@ export function ArtistsHistoryHeatmap() {
     }
     useEffect(() => { load() }, [groupingDays, limit, range, buckets])
 
-    let uniqueDates = [...new Set(historyData.map(el => el.date))]
+    /* let uniqueDates = [...new Set(historyData.map(el => el.date))]
     uniqueDates.sort() // Already sorted in database?
     let series: SerieMap = {}
     historyData.forEach((v: ArtistHistoryStats) => {
@@ -71,7 +71,7 @@ export function ArtistsHistoryHeatmap() {
         }
         let idx = uniqueDates.indexOf(v.date)
         series[v.artistid].points[idx] = v.listened_time
-    })
+    }) */
 
     let data: HeatmapRow[] = heatmapData.map((artist: ArtistHistoryBuckets) => {
         let points = artist.points.map((p: BucketPoint) => {

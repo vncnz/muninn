@@ -170,16 +170,16 @@ interface MonthBreakdown {
   percentage: number;
 }
 
-export const calculateDateSpanMonths = (daysAgoA: number, daysAgoB: number): MonthBreakdown[] => {
+export const calculateDateSpanMonths = (daysDiffA: number, daysDiffB: number): MonthBreakdown[] => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   // Get the two dates
   const dateA = new Date(today);
-  dateA.setDate(today.getDate() - daysAgoA);
+  dateA.setDate(today.getDate() + daysDiffA);
 
   const dateB = new Date(today);
-  dateB.setDate(today.getDate() - daysAgoB);
+  dateB.setDate(today.getDate() + daysDiffB);
 
   // Ensure startDate is earlier and endDate is later
   const startDate = dateA < dateB ? dateA : dateB;
