@@ -924,8 +924,8 @@ ORDER BY bt.bucket_index ASC;
 SELECT 
     ld.day,
     ld.seconds,
-    ld.song_id,
-    ld.cumulative_seconds
+    ld.song_id
+    -- ld.cumulative_seconds
 FROM listening_days ld
 LEFT JOIN song_artists sa ON sa.song_id = ld.song_id
 WHERE sa.artist_id = {artist}
@@ -936,8 +936,8 @@ ORDER BY ld.day ASC;
             Ok(DailyListenRecord {
                 day: row.get(0).expect("Day in query"),
                 seconds: row.get(1).expect("Seconds in query"),
-                song_id: row.get(2).expect("Song in query"),
-                cumulative_seconds: row.get(3).expect("Cumulative seconds in query")
+                song_id: row.get(2).expect("Song in query")
+                // cumulative_seconds: row.get(3).expect("Cumulative seconds in query")
             })
         });
 
@@ -1019,6 +1019,6 @@ ORDER BY ld.day ASC;
 struct DailyListenRecord {
     song_id: i64,
     day: NaiveDate,
-    seconds: f64,
-    cumulative_seconds: f64
+    seconds: f64
+    // cumulative_seconds: f64
 }

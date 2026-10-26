@@ -41,7 +41,7 @@ export function ArtistsHistoryHeatmap() {
     useEffect(() => { first() }, [])
 
     const load = async () => {
-        let test = await (invoke("get_artists_heatmap", { to: rangeto, totalBuckets: buckets, limit, step: groupingDays, cumulative }) as Promise<ArtistHistoryBuckets[]>)
+        let test = await (invoke("get_artists_heatmap", { to: rangeto, totalBuckets: buckets, limit, step: groupingDays }) as Promise<ArtistHistoryBuckets[]>)
         console.log("test heatmap", test)
         setHeatmapData(test)
     }
@@ -69,6 +69,7 @@ export function ArtistsHistoryHeatmap() {
 
     let legend: MultiColLabel[] = []
     let months = calculateDateSpanMonths(rangeto - buckets * groupingDays, rangeto).reverse()
+    let validRatio =  firstDate / (-buckets * groupingDays)
 
     months.forEach(m => {
         legend.push({
@@ -108,7 +109,7 @@ export function ArtistsHistoryHeatmap() {
                     />
                 </label>
             </div>
-            <HeatmapChart data={data} legend={legend} />
+            <HeatmapChart data={data} legend={legend} vline={validRatio} />
         </div>
     )
 }

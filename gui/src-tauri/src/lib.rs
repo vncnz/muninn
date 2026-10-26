@@ -72,7 +72,7 @@ fn get_artists_history_cumulative(store: tauri::State<'_, SharedStore>, from: i3
 }
 
 #[tauri::command]
-fn get_artists_heatmap(store: tauri::State<'_, SharedStore>, to: i32, total_buckets: i32, limit: i32, step: i32, cumulative: bool) -> Result<Vec<ArtistHistoryBuckets>, String> {
+fn get_artists_heatmap(store: tauri::State<'_, SharedStore>, to: i32, total_buckets: i32, limit: i32, step: i32) -> Result<Vec<ArtistHistoryBuckets>, String> {
     let store = store.lock().expect("StatsStore poisoned");
     // let from = if cumulative { 10000 } else { to + total_buckets * step };
     let from = to + total_buckets * step;

@@ -24,6 +24,10 @@
             border: 1px solid rgba(0,0,0,0.05);
             color: rgba(235, 235, 235, 0.6);
 
+            &.invalid {
+                border: 1px solid rgba(255, 0, 0, 0.05);
+            }
+
             span {
                 position: absolute;
                 top: 50%;
@@ -37,6 +41,7 @@
             }
 
             &:hover {
+                border: 1px solid rgba(0,0,0,0.5);
                 span {
                     display: block;
                 }
@@ -60,9 +65,6 @@
                 padding: 0;
                 border-top: 1px solid gray;
             }
-        }
-        .timespan {
-            // background-color: red;
         }
     }
 }

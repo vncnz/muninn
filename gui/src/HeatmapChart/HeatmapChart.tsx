@@ -1,13 +1,13 @@
-import { JSX, useLayoutEffect, useRef, useState } from "react";
+import { JSX, useRef } from "react";
 import classes from "./HeatmapChart.module.scss";
 import { HeatmapRow, MultiColLabel } from "../types";
 
-export function HeatmapChart({ data, legend }: { data: HeatmapRow[], legend: MultiColLabel[] }) {
+export function HeatmapChart({ data, legend, vline }: { data: HeatmapRow[], legend: MultiColLabel[], vline: number }) {
 
     const svgRef = useRef<HTMLDivElement | null>(null)
-    const [size, setSize] = useState<{ width: number; height: number } | null>(null)
+    // const [size, setSize] = useState<{ width: number; height: number } | null>(null)
 
-    useLayoutEffect(() => {
+    /* useLayoutEffect(() => {
         if (!svgRef.current) return
 
         const observer = new ResizeObserver(entries => {
@@ -17,7 +17,7 @@ export function HeatmapChart({ data, legend }: { data: HeatmapRow[], legend: Mul
 
         observer.observe(svgRef.current)
         return () => observer.disconnect()
-    }, [])
+    }, []) */
 
     let all_max = Math.max(...data.map(el => Math.max(...el.points.map(p => p.v))))
 
@@ -26,10 +26,14 @@ export function HeatmapChart({ data, legend }: { data: HeatmapRow[], legend: Mul
 
     data.forEach(serie => {
         elements.push(<div className={classes.rowdata}>{serie.label}</div>)
-        serie.points.forEach(point => {
+        serie.points.forEach((point, idx) => {
             let opacity = Math.pow(point.v/all_max, 1.5)
+            let cl = classes.point
+            if (idx / serie.points.length > vline) {
+                cl += ' ' + classes.invalid
+            }
             elements.push(
-                <div className={classes.point} style={{ 'backgroundColor': `rgba(0, 0, 255, ${opacity})` }} title={point.tooltip}>
+                <div className={cl} style={{ 'backgroundColor': `rgba(0, 0, 255, ${opacity})` }} title={point.tooltip}>
                     {row_length < 13 ? point.label : ''}
                 </div>
             )

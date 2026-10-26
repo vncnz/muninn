@@ -133,7 +133,7 @@ impl Song {
                 else if url.contains(".mov") || url.contains(".mkv") || url.contains(".mp4") { SongType::Movie }
                 else if url.contains("reddit") || track_key.contains("Advertisement") { SongType::Other }
                 else if artist.len() > 0 { SongType::Song } else { SongType::Unknown }; */
-            let songtype = SongType::Unknown; // TODO
+            // let songtype = SongType::Unknown;
 
 
             return Some(Song {

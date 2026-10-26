@@ -58,7 +58,7 @@ pub fn get_song_blocking(title: &str, art: &str, alb: &str, dur: f64) -> Result<
 */
 
 
-
+#[allow(unused)]
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LrcResponse {
@@ -68,7 +68,7 @@ pub struct LrcResponse {
     pub artist_name: Option<String>,
     pub album_name: Option<String>,
     pub duration: Option<f64>,
-    pub synced_lyrics: Option<String>, // Quello che ci serve
+    pub synced_lyrics: Option<String>,
     pub plain_lyrics: Option<String>,
 }
 

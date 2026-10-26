@@ -16,7 +16,6 @@ use crate::utils::fetch_synced_lyrics;
 use crate::utils::setup_logging;
 
 mod utils;
-mod lyrics;
 
 mod mpris_manager;
 use crate::mpris_manager::MprisManager;
