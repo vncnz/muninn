@@ -977,10 +977,10 @@ ORDER BY ld.day ASC;
             let total_seconds: i64 = bucket_records.iter().map(|r| r.seconds as i64).sum();
 
             // Trova la canzone più ascoltata in questo bucket (tramite un semplice raggruppamento in-memory)
-            let mut song_seconds: HashMap<&i64, i64> = HashMap::new();
+            /* let mut song_seconds: HashMap<&i64, i64> = HashMap::new();
             for r in &bucket_records {
                 *song_seconds.entry(&r.song_id).or_insert(0) += r.seconds as i64;
-            }
+            } */
 
             /* let top_song = song_seconds
                 .into_iter()
