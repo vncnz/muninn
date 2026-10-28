@@ -1,5 +1,4 @@
 use std::path::Path;
-use std::str::FromStr;
 
 use rusqlite::{Connection, Result, params};
 use std::collections::HashMap;
@@ -7,7 +6,7 @@ use std::collections::HashMap;
 use crate::{AlbumStats, Artist, ArtistHistoryStats, ArtistStats, BucketPoint, Song, SongHistoryStats};
 use crate::time_of_scope::TimeOfScope;
 
-use chrono::{self, Duration, NaiveDate};
+use chrono::{self, Duration, Local, NaiveDate};
 
 pub struct StatsStore {
     conn: rusqlite::Connection,
@@ -916,7 +915,7 @@ ORDER BY bt.bucket_index ASC;
     }
 
     pub fn get_artist_buckets1(&self, artist: i32, from: i32, total_buckets: i32, bucket_size: i32) -> Vec<BucketPoint> {
-        let _time = TimeOfScope::new("get_artist_buckets1");
+        let _time = TimeOfScope::new(format!("get_artist_buckets1 (id {artist})"));
         let to = from;
         let from = to - total_buckets * bucket_size;
         // let mut results = Vec::new();
@@ -933,12 +932,15 @@ WHERE sa.artist_id = {artist}
 ORDER BY ld.day ASC;
         ")).expect("prepare ko");
         let points = stmt.query_map([], |row| {
-            Ok(DailyListenRecord {
+
+            let rec = DailyListenRecord {
                 day: row.get(0).expect("Day in query"),
                 seconds: row.get(1).expect("Seconds in query"),
                 song_id: row.get(2).expect("Song in query")
                 // cumulative_seconds: row.get(3).expect("Cumulative seconds in query")
-            })
+            };
+
+            Ok(rec)
         });
 
         let mut points_ok: Vec<DailyListenRecord> = vec![];
@@ -949,7 +951,9 @@ ORDER BY ld.day ASC;
                 }
             }
         }
-        let results = self.compute_buckets(points_ok.as_slice(), NaiveDate::from_str("2026-10-20").unwrap(), bucket_size as i64, total_buckets as usize); // - Duration::days blablabla
+
+        let results = self.compute_buckets(points_ok.as_slice(), Local::now().naive_local().date(), bucket_size as i64, total_buckets as usize); // - Duration::days blablabla
+
         results
     }
 
@@ -1016,6 +1020,7 @@ ORDER BY ld.day ASC;
     }
 }
 
+#[derive(Debug)]
 struct DailyListenRecord {
     song_id: i64,
     day: NaiveDate,
