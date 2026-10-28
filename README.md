@@ -99,3 +99,4 @@ In production mode, you can exec `cargo build --bin muninn-daemon` from the proj
 In dev mode, you can exec `pnpm tauri dev` from the gui folder.
 
 In production mode, you can exec `pnpm tauri build --no-bundle`.
+On my desktop, I copy the executable in my local bin folder: `cp ~/Repositories/muninn/target/release/muninn-gui ~/.local/bin/muninn-gui`
