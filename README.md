@@ -55,8 +55,9 @@ The project has been re-engineered into a decoupled architecture to improve effi
   - ~~Give to the daemon the responsability of listening to mpris events, tracking the playing time, saving stats data~~
   - ~~Give to the daemon the responsability for lyrics downloading and sending~~
   - ~~Send lyrics to gui on connection too~~
-- GUI: set better defaults for graphics: a longer timespan and a 7-days bucket size?
+- ~~GUI: set better defaults for graphics: a longer timespan and a 7-days bucket size~~
 - ~~GUI: New heatmap visualization~~
+- GUI: Add the ability to reset a song counter or ignore (or hide) a song/artist
 - GUI: add click event to entire timespan element, on click set the closest bound
 - DAEMON: Ignore "A site is playing media"
 - SQL: In graph view with multi-day buckets, cumulate data on the end of each one and not on the start
@@ -71,8 +72,6 @@ The project has been re-engineered into a decoupled architecture to improve effi
 - DAEMON: Exclude plays without an artist
 - GUI: Add search feature (by title, by artist, etc.)
 - GUI: Collapse songs belonging to multiple albums when reading statistics from the database?
-- GUI: Add comparisons between different time ranges stats (current vs previous)? (partially replaced by history charts!)
-- GUI: Add the ability to reset a song counter or ignore a song/artist
 - GUI: Add the ability to merge one song listening time into another
 
 ## Known bugs

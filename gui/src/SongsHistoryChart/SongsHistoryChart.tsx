@@ -16,8 +16,8 @@ export function SongsHistoryChart() {
     const [cumulative, setCumulative] = useState(true)
     const [normalize, setNormalize] = useState(false)
     const [limit, setLimit] = useState(10)
-    const [groupingDays, setGroupingDays] = useState(1)
-    const [range, setRange] = useState<RangeFilter>({ from: -14, to: 0 })
+    const [groupingDays, setGroupingDays] = useState(7)
+    const [range, setRange] = useState<RangeFilter>({ from: -84, to: 0 })
     const [firstDate, setFirstDate] = useState<number>(0)
 
     const updateGroupingDays = (e: { target: { value: any; } }) => {
