@@ -71,7 +71,7 @@ export function Lyrics({ playing, raw }: { playing: SongPlaying, raw: String|nul
                 setLastSelectedRowIdx(selectedRowIdx);
                 let lineEl = document.querySelector(`.line-${selectedRowIdx}`);
                 if (lineEl) {
-                    lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    lineEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     console.log('Scrolled to line idx', selectedRowIdx)
                 } else {
                     console.log('No lineEl found for idx', selectedRowIdx)
